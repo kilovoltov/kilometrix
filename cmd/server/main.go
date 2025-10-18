@@ -68,7 +68,10 @@ func handleMetricUpdate(w http.ResponseWriter, r *http.Request) {
     }
 
     metricType, metricName, metricValue := parts[2], parts[3], parts[4]
-
+    if metricName == "" {
+        http.Error(w, "Invalid metric name", http.StatusNotFound)
+        return
+    }
     // Преобразуем значение в нужный формат
     var e error
     switch metricType {
