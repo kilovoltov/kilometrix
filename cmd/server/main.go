@@ -116,10 +116,12 @@ func handleMetricGet(w http.ResponseWriter, r *http.Request) {
     var e error
     switch metricType {
     case "gauge":
-        value, _ := storage.GetGauge(metricName)
+        var value float64
+        value, e = storage.GetGauge(metricName)
         vString = strconv.FormatFloat(value, 'f', -1, 64)
     case "counter":
-        value, _ := storage.GetCounter(metricName)
+        var value int64
+        value, e = storage.GetCounter(metricName)
         vString = strconv.FormatInt(value, 10)
     default:
         http.Error(w, "Invalid metric type", http.StatusBadRequest)
