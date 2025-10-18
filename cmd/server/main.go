@@ -63,7 +63,7 @@ func handleMetricUpdate(w http.ResponseWriter, r *http.Request) {
     // Разбираем URL
     parts := strings.Split(r.URL.Path, "/")
     if len(parts) != 5 {
-        http.Error(w, "Invalid URL structure", http.StatusBadRequest)
+        http.Error(w, "Invalid URL structure", http.StatusNotFound)
         return
     }
 
