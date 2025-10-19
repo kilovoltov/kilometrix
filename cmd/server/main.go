@@ -153,9 +153,8 @@ func handleMetricGet(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    // Если произошла ошибка при добавлении
     if e != nil {
-        http.Error(w, e.Error(), http.StatusBadRequest)
+        http.Error(w, e.Error(), http.StatusNotFound)
         return
     }
 
