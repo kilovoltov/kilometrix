@@ -5,6 +5,8 @@ import (
     "net/http"
     "strconv"
     "strings"
+
+    "github.com/go-chi/chi/v5"
 )
 
 // Интерфейс для работы с хранилищем метрик
@@ -193,12 +195,13 @@ func handleMain(w http.ResponseWriter, r *http.Request) {
 var storage = NewMemStorage()
 
 func main() {
-    http.HandleFunc("/update/", handleMetricUpdate)
-    http.HandleFunc("/value/", handleMetricGet)
-    http.HandleFunc("/", handleMain)
+    r := chi.NewRouter()
+    r.Post("/update/", handleMetricUpdate)
+    r.Get("/value/", handleMetricGet)
+    r.Get("/", handleMain)
 
     fmt.Println("Server started at http://localhost:8080")
-    err := http.ListenAndServe(":8080", nil)
+    err := http.ListenAndServe(":8080", r)
     if err != nil {
         panic(err)
     }
