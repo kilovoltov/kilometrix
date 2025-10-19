@@ -195,7 +195,7 @@ var storage = NewMemStorage()
 
 func main() {
     http.HandleFunc("/update/", handleMetricUpdate)
-    http.HandleFunc("/get/", handleMetricGet)
+    http.HandleFunc("/value/", handleMetricGet)
     http.HandleFunc("/", handleMain)
 
     fmt.Println("Server started at http://localhost:8080")
