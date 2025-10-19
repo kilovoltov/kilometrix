@@ -163,6 +163,10 @@ func handleMetricGet(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleMain(w http.ResponseWriter, r *http.Request) {
+    if r.URL.Path != "/" {
+        http.Error(w, "Invalid path", http.StatusNotFound)
+        return
+    }
     const formStart = `<html>
     <head>
     <title>Список метрик</title>
