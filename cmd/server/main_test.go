@@ -1,11 +1,14 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/go-chi/chi/v5"
 )
 
 // Тест для конструктора NewMemStorage
@@ -16,19 +19,12 @@ func TestNewMemStorage(t *testing.T) {
 		t.Fatal("NewMemStorage() вернул nil")
 	}
 	
-	if storage.metricsGauge == nil {
-		t.Error("metricsGauge не инициализирован")
-	}
-	
-	if storage.metricsCounter == nil {
-		t.Error("metricsCounter не инициализирован")
-	}
-	
-	if len(storage.metricsGauge) != 0 {
+	// Проверяем, что хранилище инициализировано через методы интерфейса
+	if len(storage.GetGaugesNames()) != 0 {
 		t.Error("metricsGauge не пустой после создания")
 	}
 	
-	if len(storage.metricsCounter) != 0 {
+	if len(storage.GetCounterNames()) != 0 {
 		t.Error("metricsCounter не пустой после создания")
 	}
 }
@@ -159,7 +155,7 @@ func TestMemStorage_GetCounter(t *testing.T) {
 	}
 }
 
-// Вспомогательная функция для создания HTTP запроса
+// Вспомогательная функция для создания HTTP запроса с chi router
 func createTestRequest(method, url string, body string) *http.Request {
 	var bodyReader *strings.Reader
 	if body != "" {
@@ -168,6 +164,22 @@ func createTestRequest(method, url string, body string) *http.Request {
 		bodyReader = strings.NewReader("")
 	}
 	req := httptest.NewRequest(method, url, bodyReader)
+	
+	// Создаем chi router контекст для параметров URL
+	rctx := chi.NewRouteContext()
+	
+	// Извлекаем параметры из URL и добавляем в контекст
+	parts := strings.Split(strings.Trim(url, "/"), "/")
+	if len(parts) >= 4 && parts[0] == "update" {
+		rctx.URLParams.Add("metricType", parts[1])
+		rctx.URLParams.Add("metricName", parts[2])
+		rctx.URLParams.Add("metricValue", parts[3])
+	} else if len(parts) >= 3 && parts[0] == "value" {
+		rctx.URLParams.Add("metricType", parts[1])
+		rctx.URLParams.Add("metricName", parts[2])
+	}
+	
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 	return req
 }
 
@@ -201,7 +213,7 @@ func TestHandleMetricUpdate(t *testing.T) {
 			name:           "Invalid URL structure - too few parts",
 			url:            "/update/gauge/test",
 			expectedStatus: http.StatusNotFound,
-			expectedBody:   "Invalid URL structure",
+			expectedBody:   "Invalid metric name",
 		},
 		{
 			name:           "Invalid metric name - empty",
@@ -282,7 +294,7 @@ func TestHandleMetricGet(t *testing.T) {
 			name:           "Invalid URL structure - too few parts",
 			url:            "/value/gauge",
 			expectedStatus: http.StatusBadRequest,
-			expectedBody:   "Invalid URL structure",
+			expectedBody:   "Invalid metric type",
 		},
 		{
 			name:           "Invalid metric type",

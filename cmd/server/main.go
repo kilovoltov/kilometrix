@@ -4,7 +4,6 @@ import (
     "fmt"
     "net/http"
     "strconv"
-    "strings"
 
     "github.com/go-chi/chi/v5"
 )
@@ -84,16 +83,14 @@ func (ms *MemStorage) GetCounter(name string) (int64, error) {
 
 // Функция для обработки запросов на добавление метрик
 func handleMetricUpdate(w http.ResponseWriter, r *http.Request) {
-    // Разбираем URL
-    parts := strings.Split(r.URL.Path, "/")
-    if len(parts) != 5 {
-        http.Error(w, "Invalid URL structure", http.StatusNotFound)
-        return
-    }
 
-    metricType, metricName, metricValue := parts[2], parts[3], parts[4]
+    metricType, metricName, metricValue := chi.URLParam(r, "metricType"), chi.URLParam(r, "metricName"), chi.URLParam(r, "metricValue")
     if metricName == "" {
         http.Error(w, "Invalid metric name", http.StatusNotFound)
+        return
+    }
+    if metricValue == "" {
+        http.Error(w, "Invalid metric value", http.StatusBadRequest)
         return
     }
     // Преобразуем значение в нужный формат
@@ -131,14 +128,7 @@ func handleMetricUpdate(w http.ResponseWriter, r *http.Request) {
 
 // Функция для обработки запроса на получение метрики
 func handleMetricGet(w http.ResponseWriter, r *http.Request) {
-    // Разбираем URL
-    parts := strings.Split(r.URL.Path, "/")
-    if len(parts) != 4 {
-        http.Error(w, "Invalid URL structure", http.StatusBadRequest)
-        return
-    }
-
-    metricType, metricName := parts[2], parts[3]
+    metricType, metricName := chi.URLParam(r, "metricType"), chi.URLParam(r, "metricName")
     var vString string
     var e error
     switch metricType {
@@ -196,8 +186,8 @@ var storage = NewMemStorage()
 
 func main() {
     r := chi.NewRouter()
-    r.Post("/update/", handleMetricUpdate)
-    r.Get("/value/", handleMetricGet)
+    r.Post("/update/{metricType}/{metricName}/{metricValue}", handleMetricUpdate)
+    r.Get("/value/{metricType}/{metricName}", handleMetricGet)
     r.Get("/", handleMain)
 
     fmt.Println("Server started at http://localhost:8080")
