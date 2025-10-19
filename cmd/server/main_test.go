@@ -268,38 +268,38 @@ func TestHandleMetricGet(t *testing.T) {
 	}{
 		{
 			name:           "Valid gauge metric",
-			url:            "/get/gauge/test_gauge",
+			url:            "/value/gauge/test_gauge",
 			expectedStatus: http.StatusOK,
 			expectedBody:   "123.45",
 		},
 		{
 			name:           "Valid counter metric",
-			url:            "/get/counter/test_counter",
+			url:            "/value/counter/test_counter",
 			expectedStatus: http.StatusOK,
 			expectedBody:   "42",
 		},
 		{
 			name:           "Invalid URL structure - too few parts",
-			url:            "/get/gauge",
+			url:            "/value/gauge",
 			expectedStatus: http.StatusBadRequest,
 			expectedBody:   "Invalid URL structure",
 		},
 		{
 			name:           "Invalid metric type",
-			url:            "/get/invalid/test",
+			url:            "/value/invalid/test",
 			expectedStatus: http.StatusBadRequest,
 			expectedBody:   "Invalid metric type",
 		},
 		{
 			name:           "Non-existent gauge metric",
-			url:            "/get/gauge/nonexistent",
-			expectedStatus: http.StatusBadRequest,
+			url:            "/value/gauge/nonexistent",
+			expectedStatus: http.StatusNotFound,
 			expectedBody:   "metric nonexistent not found",
 		},
 		{
 			name:           "Non-existent counter metric",
-			url:            "/get/counter/nonexistent",
-			expectedStatus: http.StatusBadRequest,
+			url:            "/value/counter/nonexistent",
+			expectedStatus: http.StatusNotFound,
 			expectedBody:   "metric nonexistent not found",
 		},
 	}
@@ -343,7 +343,7 @@ func TestMetricIntegration(t *testing.T) {
 		}
 		
 		// Получаем gauge метрику
-		getReq := createTestRequest("GET", "/get/gauge/cpu_usage", "")
+		getReq := createTestRequest("GET", "/value/gauge/cpu_usage", "")
 		getW := httptest.NewRecorder()
 		handleMetricGet(getW, getReq)
 		
@@ -377,7 +377,7 @@ func TestMetricIntegration(t *testing.T) {
 		}
 		
 		// Получаем counter метрику
-		getReq := createTestRequest("GET", "/get/counter/requests_total", "")
+		getReq := createTestRequest("GET", "/value/counter/requests_total", "")
 		getW := httptest.NewRecorder()
 		handleMetricGet(getW, getReq)
 		
