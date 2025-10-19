@@ -130,19 +130,19 @@ func main() {
     var i int64
 
     for ;;i++ {
-        fmt.Println(i)
+        // fmt.Println(i)
         if i % pollInterval == 0 {
             // Сбор метрик
             counter += 1
             countSum, _ := strconv.ParseInt(metrics[0].Value, 10, 64)
             metrics[0].Value = strconv.FormatInt(countSum + counter, 10)
             CollectRuntimeMetrics(&metrics)
-            fmt.Println("Собрал метрики")
+            // fmt.Println("Собрал метрики")
         }
 
         // Отправка метрик
         if i % reportInterval == 0 {
-            fmt.Printf("Metrics %v\n", metrics)
+            // fmt.Printf("Metrics %v\n", metrics)
             for _, metric := range metrics {
                 if err := SendMetric(client, metric); err != nil {
                     fmt.Printf("Error sending metric %s: %v\n", metric.Name, err)

@@ -13,6 +13,8 @@ type MetricStorage interface {
     AddCounter(name string, value int64) error
     GetGauge(name string) (float64, error)
     GetCounter(name string) (int64, error)
+    GetGaugesNames() []string
+    GetCounterNames() []string
 }
 
 // Тип для хранения метрик в памяти
@@ -27,6 +29,26 @@ func NewMemStorage() *MemStorage {
         metricsGauge: make(map[string]float64),
         metricsCounter: make(map[string]int64),
     }
+}
+
+func (ms *MemStorage) GetGaugesNames() []string {
+    gKeys := make([]string, len(ms.metricsGauge))
+    i := 0
+    for k := range ms.metricsGauge {
+        gKeys[i] = k
+        i++
+    }
+    return gKeys
+}
+
+func (ms *MemStorage) GetCounterNames() []string {
+    cKeys := make([]string, len(ms.metricsCounter))
+    i := 0
+    for k := range ms.metricsCounter {
+        cKeys[i] = k
+        i++
+    }
+    return cKeys
 }
 
 // Добавление метрики типа Gauge в хранилище
@@ -140,12 +162,37 @@ func handleMetricGet(w http.ResponseWriter, r *http.Request) {
     w.Write([]byte(vString))
 }
 
+func handleMain(w http.ResponseWriter, r *http.Request) {
+    const formStart = `<html>
+    <head>
+    <title>Список метрик</title>
+    </head>
+    <body>
+        <ul>`
+    var metricList string
+    var gValue float64
+    var cValue int64
+        for _, gName := range storage.GetGaugesNames() {
+            gValue, _ = storage.GetGauge(gName)
+            metricList += fmt.Sprintf("<li>%s = %.3f</li>", gName, gValue)
+        }
+        for _, cName := range storage.GetCounterNames() {
+            cValue, _ = storage.GetCounter(cName)
+            metricList += fmt.Sprintf("<li>%s = %d</li>", cName, cValue)
+        }
+    const formEnd = `</ul>
+    </body>
+    </html>`
+    w.Write([]byte(formStart + metricList + formEnd))
+}
+
 // Глобальная переменная для хранилища метрик
 var storage = NewMemStorage()
 
 func main() {
     http.HandleFunc("/update/", handleMetricUpdate)
     http.HandleFunc("/get/", handleMetricGet)
+    http.HandleFunc("/", handleMain)
 
     fmt.Println("Server started at http://localhost:8080")
     err := http.ListenAndServe(":8080", nil)
