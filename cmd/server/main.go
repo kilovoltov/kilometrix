@@ -1,6 +1,7 @@
 package main
 
 import (
+    "flag"
     "fmt"
     "net/http"
     "strconv"
@@ -185,13 +186,18 @@ func handleMain(w http.ResponseWriter, r *http.Request) {
 var storage = NewMemStorage()
 
 func main() {
+    // переменная для адреса сервера со значением по умолчанию
+    var addr = flag.String("a", "localhost:8080", "address of the server")
+
+    flag.Parse()
+    
     r := chi.NewRouter()
     r.Post("/update/{metricType}/{metricName}/{metricValue}", handleMetricUpdate)
     r.Get("/value/{metricType}/{metricName}", handleMetricGet)
     r.Get("/", handleMain)
 
-    fmt.Println("Server started at http://localhost:8080")
-    err := http.ListenAndServe(":8080", r)
+    fmt.Printf("Server started at http://%s\n", *addr)
+    err := http.ListenAndServe(*addr, r)
     if err != nil {
         panic(err)
     }
