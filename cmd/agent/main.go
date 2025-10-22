@@ -1,6 +1,7 @@
 package main
 
 import (
+    "flag"
     "fmt"
     "math/rand"
     "runtime"
@@ -8,7 +9,6 @@ import (
     "time"
 
     "github.com/go-resty/resty/v2"
-    flag "github.com/spf13/pflag"
 )
 
 type MetricType string
