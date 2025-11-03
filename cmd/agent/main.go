@@ -133,24 +133,17 @@ func main() {
     defer tickerPoll.Stop()
     defer tickerReport.Stop()
 
-    // var i int64
     for {
-        // fmt.Println(i)
-        // if i%*pollInterval == 0 {
         select {
         case <- tickerPoll.C:
             // Сбор метрик
             counter += 1
-            // countSum, _ := strconv.ParseInt(metrics["PollCount"].Value, 10, 64)
             metrics["PollCount"].Value = strconv.FormatInt(counter, 10)
             CollectRuntimeMetrics(metrics)
-            fmt.Println("Собрал метрики")
         
 
         // Отправка метрик
-        // if i%*reportInterval == 0 {
         case <- tickerReport.C:
-            // fmt.Printf("Metrics %v\n", metrics)
             for _, metric := range metrics {
                 if err := SendMetric(*addr, client, *metric); err != nil {
                     fmt.Printf("Error sending metric %s: %v\n", metric.Name, err)
@@ -158,6 +151,5 @@ func main() {
             }
             counter = 0
         }
-        // time.Sleep(time.Second)
     }
 }
