@@ -7,13 +7,14 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"github.com/kilovoltov/kilometrix/internal/repository"
 
 	"github.com/go-chi/chi/v5"
 )
 
 // Тест для конструктора NewMemStorage
 func TestNewMemStorage(t *testing.T) {
-	storage := NewMemStorage()
+	storage := repository.NewMemStorage()
 	
 	if storage == nil {
 		t.Fatal("NewMemStorage() вернул nil")
@@ -31,7 +32,7 @@ func TestNewMemStorage(t *testing.T) {
 
 // Тесты для MemStorage.AddGauge
 func TestMemStorage_AddGauge(t *testing.T) {
-	storage := NewMemStorage()
+	storage := repository.NewMemStorage()
 	
 	// Тест добавления gauge метрики
 	err := storage.AddGauge("test_gauge", 123.45)
@@ -67,7 +68,7 @@ func TestMemStorage_AddGauge(t *testing.T) {
 
 // Тесты для MemStorage.AddCounter
 func TestMemStorage_AddCounter(t *testing.T) {
-	storage := NewMemStorage()
+	storage := repository.NewMemStorage()
 	
 	// Тест добавления counter метрики
 	err := storage.AddCounter("test_counter", 10)
@@ -103,7 +104,7 @@ func TestMemStorage_AddCounter(t *testing.T) {
 
 // Тесты для MemStorage.GetGauge
 func TestMemStorage_GetGauge(t *testing.T) {
-	storage := NewMemStorage()
+	storage := repository.NewMemStorage()
 	
 	// Тест получения несуществующей gauge метрики
 	_, err := storage.GetGauge("nonexistent")
@@ -130,7 +131,7 @@ func TestMemStorage_GetGauge(t *testing.T) {
 
 // Тесты для MemStorage.GetCounter
 func TestMemStorage_GetCounter(t *testing.T) {
-	storage := NewMemStorage()
+	storage := repository.NewMemStorage()
 	
 	// Тест получения несуществующей counter метрики
 	_, err := storage.GetCounter("nonexistent")
@@ -189,7 +190,7 @@ func TestHandleMetricUpdate(t *testing.T) {
 	originalStorage := storage
 	defer func() { storage = originalStorage }()
 	
-	storage = NewMemStorage()
+	storage = repository.NewMemStorage()
 	
 	tests := []struct {
 		name           string
@@ -266,7 +267,7 @@ func TestHandleMetricGet(t *testing.T) {
 	originalStorage := storage
 	defer func() { storage = originalStorage }()
 	
-	storage = NewMemStorage()
+	storage = repository.NewMemStorage()
 	
 	// Добавляем тестовые метрики
 	storage.AddGauge("test_gauge", 123.45)
@@ -341,7 +342,7 @@ func TestMetricIntegration(t *testing.T) {
 	originalStorage := storage
 	defer func() { storage = originalStorage }()
 	
-	storage = NewMemStorage()
+	storage = repository.NewMemStorage()
 	
 	// Тест для gauge метрики
 	t.Run("Gauge metric lifecycle", func(t *testing.T) {
@@ -405,7 +406,7 @@ func TestMetricIntegration(t *testing.T) {
 
 // Бенчмарк для MemStorage операций
 func BenchmarkMemStorage_AddGauge(b *testing.B) {
-	storage := NewMemStorage()
+	storage := repository.NewMemStorage()
 	
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -414,7 +415,7 @@ func BenchmarkMemStorage_AddGauge(b *testing.B) {
 }
 
 func BenchmarkMemStorage_AddCounter(b *testing.B) {
-	storage := NewMemStorage()
+	storage := repository.NewMemStorage()
 	
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -423,7 +424,7 @@ func BenchmarkMemStorage_AddCounter(b *testing.B) {
 }
 
 func BenchmarkMemStorage_GetGauge(b *testing.B) {
-	storage := NewMemStorage()
+	storage := repository.NewMemStorage()
 	// Предварительно добавляем метрики
 	for i := 0; i < 1000; i++ {
 		storage.AddGauge(fmt.Sprintf("gauge_%d", i), float64(i))
@@ -436,7 +437,7 @@ func BenchmarkMemStorage_GetGauge(b *testing.B) {
 }
 
 func BenchmarkMemStorage_GetCounter(b *testing.B) {
-	storage := NewMemStorage()
+	storage := repository.NewMemStorage()
 	// Предварительно добавляем метрики
 	for i := 0; i < 1000; i++ {
 		storage.AddCounter(fmt.Sprintf("counter_%d", i), int64(i))
