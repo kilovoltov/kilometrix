@@ -16,9 +16,9 @@ import (
 )
 
 type Config struct {
-    ADDRESS         string `env:"ADDRESS"`
-    POLL_INTERVAL   int64  `env:"POLL_INTERVAL"`
-    REPORT_INTERVAL int    `env:"REPORT_INTERVAL"`
+    Address         string `env:"ADDRESS"`
+    PollInterval   int64  `env:"POLL_INTERVAL"`
+    ReportInterval int    `env:"REPORT_INTERVAL"`
 }
 
 func main() {
@@ -38,14 +38,14 @@ func main() {
     }
 
     // если есть переменные окружения, то они перезаписывают значения флагов
-    if cfg.ADDRESS != "" {
-        addr = cfg.ADDRESS
+    if cfg.Address != "" {
+        addr = cfg.Address
     }
-    if cfg.POLL_INTERVAL != 0 {
-        pollInterval = cfg.POLL_INTERVAL
+    if cfg.PollInterval != 0 {
+        pollInterval = cfg.PollInterval
     }
-    if cfg.REPORT_INTERVAL != 0 {
-        reportInterval = cfg.REPORT_INTERVAL
+    if cfg.ReportInterval != 0 {
+        reportInterval = cfg.ReportInterval
     }
 
     metrics := models.Storage{
