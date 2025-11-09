@@ -1,9 +1,7 @@
 package main
 
 import (
-    "flag"
     "fmt"
-    "log"
     "strconv"
     "time"
 
@@ -12,42 +10,10 @@ import (
     "github.com/kilovoltov/kilometrix/internal/models"
 
     "github.com/go-resty/resty/v2"
-    "github.com/caarlos0/env/v6"
 )
 
-type Config struct {
-    Address         string `env:"ADDRESS"`
-    PollInterval   int64  `env:"POLL_INTERVAL"`
-    ReportInterval int    `env:"REPORT_INTERVAL"`
-}
-
 func main() {
-    // параметры запуска: адрес сервера, интервалы сбора и отправки метрик
-    var addr string
-    var pollInterval int64
-    var reportInterval int
-    flag.StringVar(&addr, "a", "localhost:8080", "address of the server")
-    flag.Int64Var(&pollInterval, "p", 2, "poll interval, sec")
-    flag.IntVar(&reportInterval, "r", 10, "report interval, sec")
-    flag.Parse()
-
-    var cfg Config
-    err := env.Parse(&cfg)
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    // если есть переменные окружения, то они перезаписывают значения флагов
-    if cfg.Address != "" {
-        addr = cfg.Address
-    }
-    if cfg.PollInterval != 0 {
-        pollInterval = cfg.PollInterval
-    }
-    if cfg.ReportInterval != 0 {
-        reportInterval = cfg.ReportInterval
-    }
-
+    parseFlags()
     metrics := models.Storage{
         "PollCount":     {Name: "PollCount", Type: models.CounterType, Value: ""},
         "Alloc":         {Name: "Alloc", Type: models.GaugeType, Value: ""},
