@@ -19,6 +19,8 @@ func main() {
 
     r := chi.NewRouter()
     r.Post("/update/{metricType}/{metricName}/{metricValue}", requestLogger(stor.HandleMetricUpdate))
+	r.Post("/update", stor.HandleMetricUpdateJson)
+	r.Post("/value", stor.HandleValueJson)
     r.Get("/value/{metricType}/{metricName}", requestLogger(stor.HandleMetricGet))
     r.Get("/", requestLogger(stor.HandleMain))
 

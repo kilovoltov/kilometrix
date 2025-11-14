@@ -1,12 +1,15 @@
 package handlers
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"net/http"
 	"sort"
 	"strconv"
 
+	"github.com/kilovoltov/kilometrix/internal/models"
 	"github.com/kilovoltov/kilometrix/internal/repository"
 
 	"github.com/go-chi/chi/v5"
@@ -144,4 +147,75 @@ func (s *Stor) HandleMain(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tmpl.Execute(w, pairs)
+}
+
+func (s *Stor) HandleMetricUpdateJson(w http.ResponseWriter, r *http.Request) {
+	var metricsJson models.Metrics
+	var buf bytes.Buffer
+	_, err := buf.ReadFrom(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	// десериализуем JSON в metricsJson
+	if err = json.Unmarshal(buf.Bytes(), &metricsJson); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	// Преобразуем значение в нужный формат
+	switch metricsJson.MType {
+	case "gauge":
+		s.repo.AddGauge(metricsJson.ID, *metricsJson.Value)
+	case "counter":
+		s.repo.AddCounter(metricsJson.ID, *metricsJson.Delta)
+	default:
+		http.Error(w, "Invalid metric type", http.StatusBadRequest)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Header().Add("Content-Type", "application/json")
+	w.Write(buf.Bytes())
+}
+
+func (s *Stor) HandleValueJson(w http.ResponseWriter, r *http.Request) {
+	var metricsJson models.Metrics
+	var buf bytes.Buffer
+	_, err := buf.ReadFrom(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	// десериализуем JSON в metricsJson
+	if err = json.Unmarshal(buf.Bytes(), &metricsJson); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	// Преобразуем значение в нужный формат
+	var data models.Metrics
+	switch metricsJson.MType {
+	case "gauge":
+		gValue, _ := s.repo.GetGauge(metricsJson.ID)
+		data = models.Metrics{
+			ID:    metricsJson.ID,
+			MType: metricsJson.MType,
+			Value: &gValue,
+		}
+	case "counter":
+		cValue, _ := s.repo.GetCounter(metricsJson.ID)
+		data = models.Metrics{
+			ID:    metricsJson.ID,
+			MType: metricsJson.MType,
+			Delta: &cValue,
+		}
+	default:
+		http.Error(w, "Invalid metric type", http.StatusBadRequest)
+		return
+	}
+	dataJson, err := json.Marshal(data)
+	if err != nil {
+		panic(err)
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Header().Add("Content-Type", "application/json")
+	w.Write(dataJson)
 }
