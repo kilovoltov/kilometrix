@@ -31,7 +31,7 @@ func SendMetric(serverAddress string, client *resty.Client, metric models.Metric
 	return nil
 }
 
-func SendMetricJson(serverAddress string, client *resty.Client, metric models.Metric) error {
+func SendMetricJSON(serverAddress string, client *resty.Client, metric models.Metric) error {
 	url := fmt.Sprintf("http://%s/update",
 		serverAddress,
 	)

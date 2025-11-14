@@ -67,7 +67,7 @@ func main() {
         // Отправка метрик
         case <-tickerReport.C:
             for _, metric := range metrics {
-                if err := sender.SendMetricJson(addr, client, *metric); err != nil {
+                if err := sender.SendMetricJSON(addr, client, *metric); err != nil {
                     fmt.Printf("Error sending metric %s: %v\n", metric.Name, err)
                 }
             }
