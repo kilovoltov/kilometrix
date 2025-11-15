@@ -172,8 +172,8 @@ func (s *Stor) HandleMetricUpdateJSON(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid metric type", http.StatusBadRequest)
 		return
 	}
-	w.WriteHeader(http.StatusOK)
 	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 	w.Write(buf.Bytes())
 }
 
@@ -215,7 +215,7 @@ func (s *Stor) HandleValueJSON(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
-	w.WriteHeader(http.StatusOK)
 	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 	w.Write(dataJSON)
 }
