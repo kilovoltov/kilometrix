@@ -37,14 +37,15 @@ func SendMetricJSON(serverAddress string, client *resty.Client, metric models.Me
 	)
 	var data models.Metrics
 
-	if metric.Type == "gauge" {
+	switch metric.Type {
+	case "gauge":
 		valueFloat, _ := strconv.ParseFloat(metric.Value, 64)
 		data = models.Metrics{
 			ID:    metric.Name,
 			MType: string(metric.Type),
 			Value: &valueFloat,
 		}
-	} else {
+	case "counter":
 		valueInt, _ := strconv.ParseInt(metric.Value, 10, 64)
 		data = models.Metrics{
 			ID:    metric.Name,

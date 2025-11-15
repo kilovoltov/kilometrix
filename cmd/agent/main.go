@@ -18,7 +18,7 @@ func main() {
         "PollCount":     {Name: "PollCount", Type: models.CounterType, Value: ""},
         "Alloc":         {Name: "Alloc", Type: models.GaugeType, Value: ""},
         "BuckHashSys":   {Name: "BuckHashSys", Type: models.GaugeType, Value: ""},
-        "Frees":         {Name: "Frees", Type: models.CounterType, Value: ""},
+        "Frees":         {Name: "Frees", Type: models.GaugeType, Value: ""},
         "GCCPUFraction": {Name: "GCCPUFraction", Type: models.GaugeType, Value: ""},
         "GCSys":         {Name: "GCSys", Type: models.GaugeType, Value: ""},
         "HeapAlloc":     {Name: "HeapAlloc", Type: models.GaugeType, Value: ""},
@@ -28,7 +28,7 @@ func main() {
         "HeapReleased":  {Name: "HeapReleased", Type: models.GaugeType, Value: ""},
         "HeapSys":       {Name: "HeapSys", Type: models.GaugeType, Value: ""},
         "LastGC":        {Name: "LastGC", Type: models.GaugeType, Value: ""},
-        "Lookups":       {Name: "Lookups", Type: models.CounterType, Value: ""},
+        "Lookups":       {Name: "Lookups", Type: models.GaugeType, Value: ""},
         "MCacheInuse":   {Name: "MCacheInuse", Type: models.GaugeType, Value: ""},
         "MCacheSys":     {Name: "MCacheSys", Type: models.GaugeType, Value: ""},
         "MSpanInuse":    {Name: "MSpanInuse", Type: models.GaugeType, Value: ""},
@@ -67,7 +67,7 @@ func main() {
         // Отправка метрик
         case <-tickerReport.C:
             for _, metric := range metrics {
-                if err := sender.SendMetricJSON(addr, client, *metric); err != nil {
+                if err := sender.SendMetric(addr, client, *metric); err != nil {
                     fmt.Printf("Error sending metric %s: %v\n", metric.Name, err)
                 }
             }
