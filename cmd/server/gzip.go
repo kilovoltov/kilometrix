@@ -30,7 +30,7 @@ func (c *compressWriter) Write(p []byte) (int, error) {
 }
 
 func (c *compressWriter) WriteHeader(statusCode int) {
-	if statusCode < 300 {
+	if statusCode < 50 {
 		c.w.Header().Set("Content-Encoding", "gzip")
 	}
 	c.w.WriteHeader(statusCode)
@@ -105,6 +105,7 @@ func gzipMiddleware(h http.HandlerFunc) http.HandlerFunc {
 		}
 
 		// передаём управление хендлеру
+		ow.Header().Add("Content-Encoding", "gzip")
 		h.ServeHTTP(ow, r)
 	}
 }

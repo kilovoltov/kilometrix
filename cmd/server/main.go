@@ -25,7 +25,7 @@ func main() {
 	r.Post("/value", gzipMiddleware(stor.HandleValueJSON))
 	r.Post("/value/", gzipMiddleware(stor.HandleValueJSON))
 	r.Get("/value/{metricType}/{metricName}", requestLogger(gzipMiddleware(stor.HandleMetricGet)))
-	r.Get("/", requestLogger(stor.HandleMain))
+	r.Get("/", requestLogger(gzipMiddleware(stor.HandleMain)))
 
 	fmt.Printf("Server started at http://%s\n", addr)
 	err := http.ListenAndServe(addr, r)
