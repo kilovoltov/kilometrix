@@ -19,12 +19,12 @@ func main() {
 	stor := handlers.NewStor(memStor)
 
 	r := chi.NewRouter()
-	r.Post("/update/{metricType}/{metricName}/{metricValue}", requestLogger(stor.HandleMetricUpdate))
-	r.Post("/update", stor.HandleMetricUpdateJSON)
-	r.Post("/update/", stor.HandleMetricUpdateJSON)
-	r.Post("/value", stor.HandleValueJSON)
-	r.Post("/value/", stor.HandleValueJSON)
-	r.Get("/value/{metricType}/{metricName}", requestLogger(stor.HandleMetricGet))
+	r.Post("/update/{metricType}/{metricName}/{metricValue}", requestLogger(gzipMiddleware(stor.HandleMetricUpdate)))
+	r.Post("/update", gzipMiddleware(stor.HandleMetricUpdateJSON))
+	r.Post("/update/", gzipMiddleware(stor.HandleMetricUpdateJSON))
+	r.Post("/value", gzipMiddleware(stor.HandleValueJSON))
+	r.Post("/value/", gzipMiddleware(stor.HandleValueJSON))
+	r.Get("/value/{metricType}/{metricName}", requestLogger(gzipMiddleware(stor.HandleMetricGet)))
 	r.Get("/", requestLogger(stor.HandleMain))
 
 	fmt.Printf("Server started at http://%s\n", addr)
