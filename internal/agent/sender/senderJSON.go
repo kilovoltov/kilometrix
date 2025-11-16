@@ -3,6 +3,8 @@ package sender
 import (
 	"fmt"
 	"strconv"
+	"encoding/json"
+	"log"
 
 	"github.com/kilovoltov/kilometrix/internal/models"
 
@@ -32,9 +34,19 @@ func SendMetricJSON(serverAddress string, client *resty.Client, metric models.Me
 		}
 	}
 
+	// Сериализуем структуру в JSON
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		log.Fatal("Ошибка сериализации в JSON:", err)
+	}
+
+	// Сжимаем JSON с помощью gzip
+	compressedData, _ := GzipCompress(jsonData)
+
 	resp, err := client.R().
+		SetHeader("Content-Encoding", "gzip").
 		SetHeader("Content-Type", "application/json").
-		SetBody(data).
+		SetBody(compressedData).
 		Post(url)
 
 	if err != nil {
