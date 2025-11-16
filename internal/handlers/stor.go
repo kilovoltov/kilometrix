@@ -148,7 +148,8 @@ func (s *Stor) HandleMain(w http.ResponseWriter, r *http.Request) {
 
 	err = tmpl.Execute(w, pairs)
 	if err != nil {
-		panic(err)
+		http.Error(w, "Ошибка рендеринга шаблона", http.StatusInternalServerError)
+		return
 	}
 }
 
