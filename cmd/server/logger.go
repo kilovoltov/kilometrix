@@ -48,6 +48,11 @@ type (
 )
 
 func (r *loggingResponseWriter) Write(b []byte) (int, error) {
+	// Если статус ещё не установлен — это означает, что WriteHeader не вызывали,
+	// и Go автоматически использует 200 при первом Write.
+	if r.responseData.status == 0 {
+		r.responseData.status = http.StatusOK
+	}
 	// записываем ответ, используя оригинальный http.ResponseWriter
 	size, err := r.ResponseWriter.Write(b)
 	r.responseData.size += size // захватываем размер
@@ -61,7 +66,7 @@ func (r *loggingResponseWriter) WriteHeader(statusCode int) {
 }
 
 // RequestLogger — middleware-логер для входящих HTTP-запросов.
-func requestLogger(h http.HandlerFunc) http.HandlerFunc {
+func requestLogger(h http.Handler) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		responseData := &responseData{
@@ -72,7 +77,7 @@ func requestLogger(h http.HandlerFunc) http.HandlerFunc {
 			ResponseWriter: w, // встраиваем оригинальный http.ResponseWriter
 			responseData:   responseData,
 		}
-		h(&lw, r)
+		h.ServeHTTP(&lw, r)
 		duration := time.Since(start)
 		Log.Info("got incoming HTTP request",
 			zap.String("method", r.Method),

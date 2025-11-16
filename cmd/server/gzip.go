@@ -98,7 +98,7 @@ func gzipMiddleware(h http.HandlerFunc) http.HandlerFunc {
 			// оборачиваем тело запроса в io.Reader с поддержкой декомпрессии
 			cr, err := newCompressReader(r.Body)
 			if err != nil {
-				w.WriteHeader(http.StatusForbidden)
+				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
 			// меняем тело запроса на новое
