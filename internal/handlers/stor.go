@@ -71,7 +71,7 @@ func (s *Stor) HandleMetricUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Отправляем успешный ответ
-	w.WriteHeader(http.StatusOK)
+	// w.WriteHeader(http.StatusOK)
 	fmt.Fprintf(w, "Metric %s updated successfully", metricName)
 }
 
@@ -145,8 +145,11 @@ func (s *Stor) HandleMain(w http.ResponseWriter, r *http.Request) {
 	for _, k := range keys {
 		pairs = append(pairs, KeyValue{Key: k, Value: metricList[k]})
 	}
-	w.WriteHeader(http.StatusOK)
-	tmpl.Execute(w, pairs)
+
+	err = tmpl.Execute(w, pairs)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func (s *Stor) HandleMetricUpdateJSON(w http.ResponseWriter, r *http.Request) {
