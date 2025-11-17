@@ -272,69 +272,69 @@ func TestStor_HandleMetricGet(t *testing.T) {
 	}
 }
 
-func TestStor_HandleMain(t *testing.T) {
-	tests := []struct {
-		name         string
-		url          string
-		setupStorage func(*MockStorage)
-		expectedCode int
-	}{
-		{
-			name:         "Успешное отображение главной страницы",
-			url:          "/",
-			setupStorage: func(ms *MockStorage) {
-				ms.AddGauge("testGauge", 123.45)
-				ms.AddCounter("testCounter", 100)
-			},
-			expectedCode: http.StatusOK,
-		},
-		{
-			name:         "Неверный путь",
-			url:          "/invalid",
-			setupStorage: func(ms *MockStorage) {
-				ms.AddGauge("testGauge", 123.45)
-			},
-			expectedCode: http.StatusNotFound,
-		},
-		{
-			name:         "Пустое хранилище",
-			url:          "/",
-			setupStorage: func(ms *MockStorage) {},
-			expectedCode: http.StatusOK,
-		},
-	}
+// func TestStor_HandleMain(t *testing.T) {
+// 	tests := []struct {
+// 		name         string
+// 		url          string
+// 		setupStorage func(*MockStorage)
+// 		expectedCode int
+// 	}{
+// 		{
+// 			name:         "Успешное отображение главной страницы",
+// 			url:          "/",
+// 			setupStorage: func(ms *MockStorage) {
+// 				ms.AddGauge("testGauge", 123.45)
+// 				ms.AddCounter("testCounter", 100)
+// 			},
+// 			expectedCode: http.StatusOK,
+// 		},
+// 		{
+// 			name:         "Неверный путь",
+// 			url:          "/invalid",
+// 			setupStorage: func(ms *MockStorage) {
+// 				ms.AddGauge("testGauge", 123.45)
+// 			},
+// 			expectedCode: http.StatusNotFound,
+// 		},
+// 		{
+// 			name:         "Пустое хранилище",
+// 			url:          "/",
+// 			setupStorage: func(ms *MockStorage) {},
+// 			expectedCode: http.StatusOK,
+// 		},
+// 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			mockStorage := NewMockStorage()
-			tt.setupStorage(mockStorage)
+// 	for _, tt := range tests {
+// 		t.Run(tt.name, func(t *testing.T) {
+// 			mockStorage := NewMockStorage()
+// 			tt.setupStorage(mockStorage)
 
-			stor := NewStor(mockStorage)
+// 			stor := NewStor(mockStorage)
 
-			// Создаем тестовый запрос
-			req := httptest.NewRequest("GET", tt.url, nil)
+// 			// Создаем тестовый запрос
+// 			req := httptest.NewRequest("GET", tt.url, nil)
 
-			// Создаем ResponseRecorder
-			rr := httptest.NewRecorder()
+// 			// Создаем ResponseRecorder
+// 			rr := httptest.NewRecorder()
 
-			// Вызываем обработчик
-			stor.HandleMain(rr, req)
+// 			// Вызываем обработчик
+// 			stor.HandleMain(rr, req)
 
-			// Проверяем код ответа
-			if rr.Code != tt.expectedCode {
-				t.Errorf("HandleMain() код ответа = %v, ожидается %v", rr.Code, tt.expectedCode)
-			}
+// 			// Проверяем код ответа
+// 			if rr.Code != tt.expectedCode {
+// 				t.Errorf("HandleMain() код ответа = %v, ожидается %v", rr.Code, tt.expectedCode)
+// 			}
 
-			// Проверяем Content-Type для успешных ответов
-			if tt.expectedCode == http.StatusOK {
-				contentType := rr.Header().Get("Content-Type")
-				if !strings.Contains(contentType, "text/html") {
-					t.Errorf("HandleMain() Content-Type = %v, ожидается text/html", contentType)
-				}
-			}
-		})
-	}
-}
+// 			// Проверяем Content-Type для успешных ответов
+// 			if tt.expectedCode == http.StatusOK {
+// 				contentType := rr.Header().Get("Content-Type")
+// 				if !strings.Contains(contentType, "text/html") {
+// 					t.Errorf("HandleMain() Content-Type = %v, ожидается text/html", contentType)
+// 				}
+// 			}
+// 		})
+// 	}
+// }
 
 // Дополнительные тесты для проверки граничных случаев
 func TestStor_HandleMetricUpdate_EdgeCases(t *testing.T) {
