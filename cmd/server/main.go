@@ -20,10 +20,10 @@ func main() {
 
 	r := chi.NewRouter()
 	r.Post("/update/{metricType}/{metricName}/{metricValue}", requestLogger(gzipMiddleware(stor.HandleMetricUpdate)))
-	r.Post("/update", gzipMiddleware(stor.HandleMetricUpdateJSON))
-	r.Post("/update/", gzipMiddleware(stor.HandleMetricUpdateJSON))
-	r.Post("/value", gzipMiddleware(stor.HandleValueJSON))
-	r.Post("/value/", gzipMiddleware(stor.HandleValueJSON))
+	r.Post("/update", requestLogger(gzipMiddleware(stor.HandleMetricUpdateJSON)))
+	r.Post("/update/", requestLogger(gzipMiddleware(stor.HandleMetricUpdateJSON)))
+	r.Post("/value", requestLogger(gzipMiddleware(stor.HandleValueJSON)))
+	r.Post("/value/", requestLogger(gzipMiddleware(stor.HandleValueJSON)))
 	r.Get("/value/{metricType}/{metricName}", requestLogger(gzipMiddleware(stor.HandleMetricGet)))
 	r.Get("/", requestLogger(gzipMiddleware(stor.HandleMain)))
 
