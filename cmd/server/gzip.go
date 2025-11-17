@@ -2,6 +2,7 @@ package main
 
 import (
 	"compress/gzip"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -26,13 +27,22 @@ func (c *compressWriter) Header() http.Header {
 }
 
 func (c *compressWriter) Write(p []byte) (int, error) {
-	return c.zw.Write(p)
+	fmt.Println(c.w.Header())
+	if strings.Contains(c.w.Header().Get("Content-Type"), "application/json") ||
+		strings.Contains(c.w.Header().Get("Content-Type"), "text/html") {
+		c.w.Header().Set("Content-Encoding", "gzip")
+		return c.zw.Write(p)
+	} else {
+
+		return c.w.Write(p)
+	}
 }
 
 func (c *compressWriter) WriteHeader(statusCode int) {
-	// if statusCode < 50 {
-	c.w.Header().Set("Content-Encoding", "gzip")
-	// }
+	if strings.Contains(c.w.Header().Get("Content-Type"), "application/json") ||
+		strings.Contains(c.w.Header().Get("Content-Type"), "text/html") {
+		c.w.Header().Set("Content-Encoding", "gzip")
+	}
 	c.w.WriteHeader(statusCode)
 }
 
@@ -83,8 +93,6 @@ func gzipMiddleware(h http.HandlerFunc) http.HandlerFunc {
 		if supportsGzip {
 			// оборачиваем оригинальный http.ResponseWriter новым с поддержкой сжатия
 			cw := newCompressWriter(w)
-			// добавляем заголовок gzip
-			cw.Header().Add("Content-Encoding", "gzip")
 			// меняем оригинальный http.ResponseWriter на новый
 			ow = cw
 			// не забываем отправить клиенту все сжатые данные после завершения middleware
