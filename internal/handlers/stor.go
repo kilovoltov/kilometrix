@@ -109,7 +109,7 @@ func (s *Stor) HandleMain(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tmpl, err := template.ParseFiles("index.html") // Шаблон
+	tmpl, err := template.ParseFiles("./internal/handlers/index.html") // Шаблон
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
