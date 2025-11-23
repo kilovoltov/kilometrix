@@ -2,11 +2,14 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"strings"
-	"sync"
 	"testing"
+
+	"github.com/kilovoltov/kilometrix/internal/models"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -20,7 +23,6 @@ func (e MetricNotFoundError) Error() string {
 
 // MockStorage - мок-реализация MetricStorage для тестирования
 type MockStorage struct {
-	mu             sync.RWMutex
 	gauges   map[string]float64
 	counters map[string]int64
 }
@@ -59,34 +61,45 @@ func (m *MockStorage) GetCounter(name string) (int64, error) {
 }
 
 func (m *MockStorage) GetGaugesNames() []string {
-	names := make([]string, 0, len(m.gauges))
-	for name := range m.gauges {
-		names = append(names, name)
-	}
-	return names
+	gKeys := make([]string, len(m.gauges))
+    i := 0
+    for k := range m.gauges {
+        gKeys[i] = k
+        i++
+    }
+    return gKeys
 }
 
 func (m *MockStorage) GetCounterNames() []string {
-	names := make([]string, 0, len(m.counters))
-	for name := range m.counters {
-		names = append(names, name)
+	cKeys := make([]string, len(m.counters))
+    i := 0
+    for k := range m.counters {
+        cKeys[i] = k
+        i++
+    }
+    return cKeys
+}
+
+func (m *MockStorage) Snapshot() []byte {
+	snap := make([]models.Metrics, 0, len(m.counters)+len(m.gauges))
+
+	for _, gName := range m.GetGaugesNames() {
+		v, _ := m.GetGauge(gName)
+		snap = append(snap, models.Metrics{ID: gName, MType: "gauge", Value: &v})
 	}
-	return names
+	for _, cName := range m.GetCounterNames() {
+		d, _ := m.GetCounter(cName)
+		snap = append(snap, models.Metrics{ID: cName, MType: "counter", Delta: &d})
+	}
+
+	// Сериализуем структуру в JSON
+	snapJSON, err := json.Marshal(snap)
+	if err != nil {
+		log.Fatal("Ошибка сериализации в JSON:", err)
+	}
+
+	return snapJSON
 }
-
-func (m *MockStorage) Snapshot() map[string]any {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-
-	snap := make(map[string]any)
-
-	snap["gauges"] = m.gauges
-	snap["counters"] = m.counters
-
-	return snap
-}
-
-func (m *MockStorage) Close() error { return nil }
 
 // Создаем контекст с роутингом
 func contextWithRouteContext(ctx context.Context, rctx *chi.Context) context.Context {
@@ -161,7 +174,7 @@ func TestStor_HandleMetricUpdate(t *testing.T) {
 
 			// Создаем тестовый запрос
 			req := httptest.NewRequest("POST", tt.url, nil)
-			
+
 			// Настраиваем параметры роута
 			rctx := chi.NewRouteContext()
 			// Парсим URL для извлечения параметров
@@ -175,7 +188,7 @@ func TestStor_HandleMetricUpdate(t *testing.T) {
 			if len(parts) >= 3 {
 				rctx.URLParams.Add("metricValue", parts[2])
 			}
-			
+
 			*req = *req.WithContext(contextWithRouteContext(req.Context(), rctx))
 
 			// Создаем ResponseRecorder
@@ -206,8 +219,8 @@ func TestStor_HandleMetricGet(t *testing.T) {
 		expectedBody string
 	}{
 		{
-			name:         "Успешное получение существующей gauge метрики",
-			url:          "/value/gauge/testGauge",
+			name: "Успешное получение существующей gauge метрики",
+			url:  "/value/gauge/testGauge",
 			setupStorage: func(ms *MockStorage) {
 				ms.AddGauge("testGauge", 123.45)
 			},
@@ -215,8 +228,8 @@ func TestStor_HandleMetricGet(t *testing.T) {
 			expectedBody: "123.45",
 		},
 		{
-			name:         "Успешное получение существующей counter метрики",
-			url:          "/value/counter/testCounter",
+			name: "Успешное получение существующей counter метрики",
+			url:  "/value/counter/testCounter",
 			setupStorage: func(ms *MockStorage) {
 				ms.AddCounter("testCounter", 100)
 			},
@@ -255,7 +268,7 @@ func TestStor_HandleMetricGet(t *testing.T) {
 
 			// Создаем тестовый запрос
 			req := httptest.NewRequest("GET", tt.url, nil)
-			
+
 			// Настраиваем параметры роута
 			rctx := chi.NewRouteContext()
 			// Парсим URL для извлечения параметров
@@ -266,7 +279,7 @@ func TestStor_HandleMetricGet(t *testing.T) {
 			if len(parts) >= 2 {
 				rctx.URLParams.Add("metricName", parts[1])
 			}
-			
+
 			*req = *req.WithContext(contextWithRouteContext(req.Context(), rctx))
 
 			// Создаем ResponseRecorder

@@ -1,12 +1,9 @@
 package repository
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
-	"maps"
 	"os"
-	"sync"
 	"time"
 )
 
@@ -15,14 +12,6 @@ type FileStorage struct {
 
 	filepath string
 	interval time.Duration
-
-	// Для асинхронного режима
-	ctx    context.Context
-	cancel context.CancelFunc
-	wg     sync.WaitGroup
-
-	// Защита для внутренних полей (например, cancel)
-	// mu sync.RWMutex
 }
 
 func NewFileStorage(filepath string, interval time.Duration) *FileStorage {
@@ -33,8 +22,6 @@ func NewFileStorage(filepath string, interval time.Duration) *FileStorage {
 	}
 
 	if interval > 0 {
-		fs.ctx, fs.cancel = context.WithCancel(context.Background())
-		fs.wg.Add(1)
 		go fs.runPeriodicSaver()
 	}
 
@@ -42,46 +29,44 @@ func NewFileStorage(filepath string, interval time.Duration) *FileStorage {
 }
 
 func (f *FileStorage) runPeriodicSaver() {
-	defer f.wg.Done()
-
 	ticker := time.NewTicker(f.interval)
 	defer ticker.Stop()
 
+	done := make(chan bool)
 	for {
 		select {
+		case <-done:
+			return
 		case <-ticker.C:
 			_ = f.saveToFile() // игнорируем ошибку или логируем
-		case <-f.ctx.Done():
-			// Сохраняем напоследок
-			_ = f.saveToFile()
-			return
 		}
 	}
 }
 
 func (f *FileStorage) saveToFile() error {
 	// Делаем снимок данных
-	snapshot := struct {
-		Gauges   map[string]float64 `json:"gauges"`
-		Counters map[string]int64   `json:"counters"`
-	}{
-		Gauges:   make(map[string]float64, len(f.mem.metricsGauge)),
-		Counters: make(map[string]int64, len(f.mem.metricsCounter)),
-	}
-
-	maps.Copy(snapshot.Gauges, f.mem.metricsGauge)
-	maps.Copy(snapshot.Counters, f.mem.metricsCounter)
+	snapshot := f.Snapshot()
+	// snapshot := struct {
+	// 	Gauges   map[string]float64 `json:"gauges"`
+	// 	Counters map[string]int64   `json:"counters"`
+	// }{
+	// 	Gauges:   make(map[string]float64, len(f.mem.metricsGauge)),
+	// 	Counters: make(map[string]int64, len(f.mem.metricsCounter)),
+	// }
 
 	// Записываем в файл
-	file, err := os.Create(f.filepath)
+	file, err := os.OpenFile(f.filepath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
 	if err != nil {
 		return fmt.Errorf("failed to create file %q: %w", f.filepath, err)
 	}
 	defer file.Close()
 
-	encoder := json.NewEncoder(file)
-	encoder.SetIndent("", "  ")
-	return encoder.Encode(snapshot)
+	_, err = file.Write(snapshot)
+	return err
+
+	// encoder := json.NewEncoder(file)
+	// encoder.SetIndent("", "  ")
+	// return encoder.Encode(snapshot)
 }
 
 func (f *FileStorage) AddGauge(name string, value float64) error {
@@ -123,18 +108,8 @@ func (f *FileStorage) GetCounterNames() []string {
 	return f.mem.GetCounterNames()
 }
 
-func (f *FileStorage) Snapshot() map[string]any {
+func (f *FileStorage) Snapshot() []byte {
 	return f.mem.Snapshot()
-}
-
-func (f *FileStorage) Close() error {
-	if f.cancel != nil {
-		f.cancel()
-		f.cancel = nil
-	}
-
-	f.wg.Wait() // дожидаемся завершения горутины (если была)
-	return nil
 }
 
 // Опционально: метод загрузки из файла при старте
