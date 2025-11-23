@@ -1,15 +1,15 @@
 package main
 
 import (
-    "fmt"
-    "strconv"
-    "time"
+	"fmt"
+	"strconv"
+	"time"
 
-    "github.com/kilovoltov/kilometrix/internal/agent/collector"
-    "github.com/kilovoltov/kilometrix/internal/agent/sender"
-    "github.com/kilovoltov/kilometrix/internal/models"
+	"github.com/kilovoltov/kilometrix/internal/agent/collector"
+	"github.com/kilovoltov/kilometrix/internal/agent/sender"
+	"github.com/kilovoltov/kilometrix/internal/models"
 
-    "github.com/go-resty/resty/v2"
+	"github.com/go-resty/resty/v2"
 )
 
 func main() {

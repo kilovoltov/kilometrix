@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/go-chi/chi/v5"
@@ -19,6 +20,7 @@ func (e MetricNotFoundError) Error() string {
 
 // MockStorage - мок-реализация MetricStorage для тестирования
 type MockStorage struct {
+	mu             sync.RWMutex
 	gauges   map[string]float64
 	counters map[string]int64
 }
@@ -71,6 +73,20 @@ func (m *MockStorage) GetCounterNames() []string {
 	}
 	return names
 }
+
+func (m *MockStorage) Snapshot() map[string]any {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	snap := make(map[string]any)
+
+	snap["gauges"] = m.gauges
+	snap["counters"] = m.counters
+
+	return snap
+}
+
+func (m *MockStorage) Close() error { return nil }
 
 // Создаем контекст с роутингом
 func contextWithRouteContext(ctx context.Context, rctx *chi.Context) context.Context {

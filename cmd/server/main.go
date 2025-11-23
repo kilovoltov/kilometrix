@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/kilovoltov/kilometrix/internal/handlers"
 	"github.com/kilovoltov/kilometrix/internal/repository"
@@ -15,7 +16,8 @@ func main() {
 	if err := LoggerInitialize(logLevel); err != nil {
 		panic(err)
 	}
-	memStor := repository.NewMemStorage()
+	// memStor := repository.NewMemStorage()
+	memStor := repository.NewFileStorage(storFilePath, time.Duration(storInterval)*time.Second)
 	stor := handlers.NewStor(memStor)
 
 	r := chi.NewRouter()
