@@ -156,17 +156,20 @@ func (f *FileStorage) LoadFromFile() error {
 	}
 	defer file.Close()
 
-	var data struct {
-		Gauges   map[string]float64 `json:"gauges"`
-		Counters map[string]int64   `json:"counters"`
+	var metrics []models.Metrics
+	decoder := json.NewDecoder(file)
+	if err := decoder.Decode(&metrics); err != nil {
+		panic(err)
 	}
 
-	if err := json.NewDecoder(file).Decode(&data); err != nil {
-		return err
+	for _, m := range metrics {
+		switch m.MType {
+		case "gauge":
+			f.AddGauge(m.ID, *m.Value)
+		case "counter":
+			f.AddCounter(m.ID, *m.Delta)
+		}
 	}
-
-	f.mem.metricsGauge = data.Gauges
-	f.mem.metricsCounter = data.Counters
 
 	return nil
 }

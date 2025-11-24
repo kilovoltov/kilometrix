@@ -92,10 +92,5 @@ func (m *MemStorage) Snapshot() []models.Metrics {
 		snapshot = append(snapshot, models.Metrics{ID: cName, MType: "counter", Delta: &d, Value: nil})
 	}
 
-	// Сериализуем структуру в JSON
-	// snapJSON, err := json.Marshal(snapshot)
-	// if err != nil {
-	// 	log.Fatal("Ошибка сериализации в JSON:", err)
-	// }
 	return snapshot
 }

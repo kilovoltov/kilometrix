@@ -145,8 +145,9 @@ func (s *Stor) HandleMain(w http.ResponseWriter, r *http.Request) {
 	for _, k := range keys {
 		pairs = append(pairs, KeyValue{Key: k, Value: metricList[k]})
 	}
+
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err = tmpl.Execute(w, pairs)
+	err = tmpl.Execute(w, &pairs)
 	if err != nil {
 		http.Error(w, "Ошибка рендеринга шаблона", http.StatusInternalServerError)
 		return

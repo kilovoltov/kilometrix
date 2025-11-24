@@ -2,7 +2,6 @@ package main
 
 import (
 	"compress/gzip"
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -27,13 +26,12 @@ func (c *compressWriter) Header() http.Header {
 }
 
 func (c *compressWriter) Write(p []byte) (int, error) {
-	fmt.Println(c.w.Header())
+	// fmt.Printf("Headers: %v", c.w.Header())
 	if strings.Contains(c.w.Header().Get("Content-Type"), "application/json") ||
 		strings.Contains(c.w.Header().Get("Content-Type"), "text/html") {
 		c.w.Header().Set("Content-Encoding", "gzip")
 		return c.zw.Write(p)
 	} else {
-
 		return c.w.Write(p)
 	}
 }
