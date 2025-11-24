@@ -80,15 +80,15 @@ func (ms *MemStorage) GetCounter(name string) (int64, error) {
 	return metric, nil
 }
 
-func (m *MemStorage) Snapshot() []models.Metrics {
-	snapshot := make([]models.Metrics, 0, len(m.metricsCounter)+len(m.metricsGauge))
+func (ms *MemStorage) Snapshot() []models.Metrics {
+	snapshot := make([]models.Metrics, 0, len(ms.metricsCounter)+len(ms.metricsGauge))
 
-	for _, gName := range m.GetGaugesNames() {
-		v, _ := m.GetGauge(gName)
+	for _, gName := range ms.GetGaugesNames() {
+		v, _ := ms.GetGauge(gName)
 		snapshot = append(snapshot, models.Metrics{ID: gName, MType: "gauge", Delta: nil, Value: &v})
 	}
-	for _, cName := range m.GetCounterNames() {
-		d, _ := m.GetCounter(cName)
+	for _, cName := range ms.GetCounterNames() {
+		d, _ := ms.GetCounter(cName)
 		snapshot = append(snapshot, models.Metrics{ID: cName, MType: "counter", Delta: &d, Value: nil})
 	}
 
