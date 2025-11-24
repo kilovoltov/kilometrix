@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/kilovoltov/kilometrix/internal/handlers"
@@ -34,7 +35,7 @@ func main() {
 	r.Get("/value/{metricType}/{metricName}", requestLogger(gzipMiddleware(stor.HandleMetricGet)))
 	r.Get("/", requestLogger(gzipMiddleware(stor.HandleMain)))
 
-	fmt.Printf("Server started at http://%s\n", addr)
+	fmt.Printf("Server started at http://%s\nParameters: %v", addr, os.Args)
 	err := http.ListenAndServe(addr, r)
 	if err != nil {
 		panic(err)
