@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"time"
+
+	"github.com/kilovoltov/kilometrix/internal/models"
 )
 
 type FileStorage struct {
@@ -46,13 +48,6 @@ func (f *FileStorage) runPeriodicSaver() {
 func (f *FileStorage) saveToFile() error {
 	// Делаем снимок данных
 	snapshot := f.Snapshot()
-	// snapshot := struct {
-	// 	Gauges   map[string]float64 `json:"gauges"`
-	// 	Counters map[string]int64   `json:"counters"`
-	// }{
-	// 	Gauges:   make(map[string]float64, len(f.mem.metricsGauge)),
-	// 	Counters: make(map[string]int64, len(f.mem.metricsCounter)),
-	// }
 
 	// Записываем в файл
 	file, err := os.OpenFile(f.filepath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
@@ -60,6 +55,10 @@ func (f *FileStorage) saveToFile() error {
 		return fmt.Errorf("failed to create file %q: %w", f.filepath, err)
 	}
 	defer file.Close()
+
+	for item := range(snapshot) {
+		
+	}
 
 	_, err = file.Write(snapshot)
 	return err
@@ -108,7 +107,7 @@ func (f *FileStorage) GetCounterNames() []string {
 	return f.mem.GetCounterNames()
 }
 
-func (f *FileStorage) Snapshot() []byte {
+func (f *FileStorage) Snapshot() []models.Metrics {
 	return f.mem.Snapshot()
 }
 

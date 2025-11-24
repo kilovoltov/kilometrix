@@ -2,8 +2,6 @@ package handlers
 
 import (
 	"context"
-	"encoding/json"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -80,25 +78,19 @@ func (m *MockStorage) GetCounterNames() []string {
     return cKeys
 }
 
-func (m *MockStorage) Snapshot() []byte {
-	snap := make([]models.Metrics, 0, len(m.counters)+len(m.gauges))
+func (m *MockStorage) Snapshot() []models.Metrics {
+	snapshot := make([]models.Metrics, 0, len(m.counters)+len(m.gauges))
 
 	for _, gName := range m.GetGaugesNames() {
 		v, _ := m.GetGauge(gName)
-		snap = append(snap, models.Metrics{ID: gName, MType: "gauge", Value: &v})
+		snapshot = append(snapshot, models.Metrics{ID: gName, MType: "gauge", Delta: nil, Value: &v})
 	}
 	for _, cName := range m.GetCounterNames() {
 		d, _ := m.GetCounter(cName)
-		snap = append(snap, models.Metrics{ID: cName, MType: "counter", Delta: &d})
+		snapshot = append(snapshot, models.Metrics{ID: cName, MType: "counter", Delta: &d, Value: nil})
 	}
 
-	// Сериализуем структуру в JSON
-	snapJSON, err := json.Marshal(snap)
-	if err != nil {
-		log.Fatal("Ошибка сериализации в JSON:", err)
-	}
-
-	return snapJSON
+	return snapshot
 }
 
 // Создаем контекст с роутингом

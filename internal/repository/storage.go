@@ -1,9 +1,7 @@
 package repository
 
 import (
-	"encoding/json"
 	"fmt"
-	"log"
 
 	"github.com/kilovoltov/kilometrix/internal/models"
 )
@@ -16,7 +14,7 @@ type MetricStorage interface {
 	GetCounter(name string) (int64, error)
 	GetGaugesNames() []string
 	GetCounterNames() []string
-	Snapshot() []byte
+	Snapshot() []models.Metrics
 }
 
 // Тип для хранения метрик в памяти
@@ -82,22 +80,22 @@ func (ms *MemStorage) GetCounter(name string) (int64, error) {
 	return metric, nil
 }
 
-func (m *MemStorage) Snapshot() []byte {
-	snap := make([]models.Metrics, 0, len(m.metricsCounter)+len(m.metricsGauge))
+func (m *MemStorage) Snapshot() []models.Metrics {
+	snapshot := make([]models.Metrics, 0, len(m.metricsCounter)+len(m.metricsGauge))
 
 	for _, gName := range m.GetGaugesNames() {
 		v, _ := m.GetGauge(gName)
-		snap = append(snap, models.Metrics{ID: gName, MType: "gauge", Delta: nil, Value: &v})
+		snapshot = append(snapshot, models.Metrics{ID: gName, MType: "gauge", Delta: nil, Value: &v})
 	}
 	for _, cName := range m.GetCounterNames() {
 		d, _ := m.GetCounter(cName)
-		snap = append(snap, models.Metrics{ID: cName, MType: "counter", Delta: &d, Value: nil})
+		snapshot = append(snapshot, models.Metrics{ID: cName, MType: "counter", Delta: &d, Value: nil})
 	}
 
 	// Сериализуем структуру в JSON
-	snapJSON, err := json.Marshal(snap)
-	if err != nil {
-		log.Fatal("Ошибка сериализации в JSON:", err)
-	}
-	return snapJSON
+	// snapJSON, err := json.Marshal(snapshot)
+	// if err != nil {
+	// 	log.Fatal("Ошибка сериализации в JSON:", err)
+	// }
+	return snapshot
 }
