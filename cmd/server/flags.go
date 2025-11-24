@@ -11,6 +11,7 @@ var (
 	logLevel     string
 	storFilePath string
 	storInterval int
+	restore      bool
 )
 
 func parseFlags() {
@@ -18,6 +19,7 @@ func parseFlags() {
 	flag.StringVar(&logLevel, "l", "info", "log level")
 	flag.IntVar(&storInterval, "i", 300, "stor interval, sec")
 	flag.StringVar(&storFilePath, "f", "/tmp/metrics.json", "filestorage path")
+	flag.BoolVar(&restore, "r", false, "restore from file")
 	flag.Parse()
 
 	if envRunAddr := os.Getenv("ADDRESS"); envRunAddr != "" {
@@ -35,5 +37,8 @@ func parseFlags() {
 	}
 	if envStorFilePath := os.Getenv("FILE_STORAGE_PATH"); envStorFilePath != "" {
 		storFilePath = envStorFilePath
+	}
+	if _, ok := os.LookupEnv("RESTORE"); ok {
+		restore = true
 	}
 }

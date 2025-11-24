@@ -16,9 +16,14 @@ func main() {
 	if err := LoggerInitialize(logLevel); err != nil {
 		panic(err)
 	}
+
 	// memStor := repository.NewMemStorage()
 	memStor := repository.NewFileStorage(storFilePath, time.Duration(storInterval)*time.Second)
 	stor := handlers.NewStor(memStor)
+
+	if restore {
+		memStor.LoadFromFile()
+	}
 
 	r := chi.NewRouter()
 	r.Post("/update/{metricType}/{metricName}/{metricValue}", requestLogger(gzipMiddleware(stor.HandleMetricUpdate)))

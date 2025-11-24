@@ -56,16 +56,50 @@ func (f *FileStorage) saveToFile() error {
 	}
 	defer file.Close()
 
-	for item := range(snapshot) {
-		
+	// Пишем открывающую скобку
+	if _, err := file.WriteString("[\n"); err != nil {
+		return err
 	}
 
-	_, err = file.Write(snapshot)
-	return err
+	for i, m := range snapshot {
+		// Сериализуем структуру в JSON без отступов (compact)
+		data, err := json.Marshal(m)
+		if err != nil {
+			return err
+		}
 
+		// Пишем строку
+		if _, err := file.Write(data); err != nil {
+			return err
+		}
+
+		// Добавляем запятую, если это НЕ последний элемент
+		if i < len(snapshot)-1 {
+			if _, err := file.WriteString(",\n"); err != nil {
+				return err
+			}
+		} else {
+			// Последний элемент — только перенос строки
+			if _, err := file.WriteString("\n"); err != nil {
+				return err
+			}
+		}
+	}
+
+	// Пишем закрывающую скобку
+	if _, err := file.WriteString("]"); err != nil {
+		return err
+	}
+
+	// Запись в формате JSONL
 	// encoder := json.NewEncoder(file)
-	// encoder.SetIndent("", "  ")
-	// return encoder.Encode(snapshot)
+	// for _, m := range snapshot {
+	// 	if err := encoder.Encode(m); err != nil {
+	// 		return err
+	// 	}
+	// }
+
+	return nil
 }
 
 func (f *FileStorage) AddGauge(name string, value float64) error {
