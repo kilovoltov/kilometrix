@@ -18,7 +18,7 @@ func parseFlags() {
 	flag.StringVar(&addr, "a", "localhost:8080", "address of the server")
 	flag.StringVar(&logLevel, "l", "info", "log level")
 	flag.IntVar(&storInterval, "i", 300, "stor interval, sec")
-	flag.StringVar(&storFilePath, "f", "/tmp/metrics.json", "filestorage path")
+	flag.StringVar(&storFilePath, "f", "./metrics.json", "filestorage path")
 	flag.BoolVar(&restore, "r", false, "restore from file")
 	flag.Parse()
 
