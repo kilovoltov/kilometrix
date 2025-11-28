@@ -23,6 +23,7 @@ func main() {
 	stor := handlers.NewStor(memStor)
 
 	if restore {
+		fmt.Println("Loaded from file")
 		memStor.LoadFromFile()
 	}
 
