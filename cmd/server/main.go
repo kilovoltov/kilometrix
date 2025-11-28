@@ -17,6 +17,7 @@ func main() {
 	if err := LoggerInitialize(logLevel); err != nil {
 		panic(err)
 	}
+	defer fmt.Println("STOPe!")
 
 	// memStor := repository.NewMemStorage()
 	memStor := repository.NewFileStorage(storFilePath, time.Duration(storInterval)*time.Second)
