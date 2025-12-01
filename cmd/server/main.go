@@ -30,14 +30,14 @@ func main() {
 
 	r := chi.NewRouter()
 	r.Post("/update/{metricType}/{metricName}/{metricValue}", requestLogger(gzipMiddleware(stor.HandleMetricUpdate)))
-	r.Post("/update", requestLogger(gzipMiddleware(stor.HandleMetricUpdateJSON)))
+	r.Post("/update", gzipMiddleware(stor.HandleMetricUpdateJSON))
 	r.Post("/update/", requestLogger(gzipMiddleware(stor.HandleMetricUpdateJSON)))
 	r.Post("/value", requestLogger(gzipMiddleware(stor.HandleValueJSON)))
 	r.Post("/value/", requestLogger(gzipMiddleware(stor.HandleValueJSON)))
 	r.Get("/value/{metricType}/{metricName}", requestLogger(gzipMiddleware(stor.HandleMetricGet)))
 	r.Get("/", requestLogger(gzipMiddleware(stor.HandleMain)))
 
-	fmt.Printf("Server started at http://%s\nParameters: %v\n, filepath: %s", addr, os.Args, storFilePath)
+	fmt.Printf("Server started at http://%s\nParameters: %v\n, filepath: %s\n", addr, os.Args, storFilePath)
 	err := http.ListenAndServe(addr, r)
 	if err != nil {
 		panic(err)

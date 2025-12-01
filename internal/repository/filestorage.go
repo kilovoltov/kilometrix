@@ -103,6 +103,7 @@ func (f *FileStorage) saveToFile() error {
 }
 
 func (f *FileStorage) AddGauge(name string, value float64) error {
+	fmt.Printf("==> 2 <== Added gauge: %s with value %f\n", name, value)
 	if err := f.mem.AddGauge(name, value); err != nil {
 		return err
 	}
@@ -115,6 +116,7 @@ func (f *FileStorage) AddGauge(name string, value float64) error {
 }
 
 func (f *FileStorage) AddCounter(name string, value int64) error {
+	fmt.Printf("==> 2 <== Added counter: %s with value %d\n", name, value)
 	if err := f.mem.AddCounter(name, value); err != nil {
 		return err
 	}

@@ -170,10 +170,10 @@ func (s *Stor) HandleMetricUpdateJSON(w http.ResponseWriter, r *http.Request) {
 	// Преобразуем значение в нужный формат
 	switch metricsJSON.MType {
 	case "gauge":
-		fmt.Printf("Added gauge: %d, %s\n", metricsJSON.Value, metricsJSON.ID)
+		fmt.Printf("==> 1 <== Added gauge: %s, %f\n", metricsJSON.ID, *metricsJSON.Value)
 		s.repo.AddGauge(metricsJSON.ID, *metricsJSON.Value)
 	case "counter":
-		fmt.Printf("Added counter: %d, %s\n", metricsJSON.Delta, metricsJSON.ID)
+		fmt.Printf("==> 1 <== Added counter: %s, %d\n", metricsJSON.ID, *metricsJSON.Delta)
 		s.repo.AddCounter(metricsJSON.ID, *metricsJSON.Delta)
 	default:
 		http.Error(w, "Invalid metric type", http.StatusBadRequest)
