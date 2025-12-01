@@ -152,7 +152,7 @@ func (f *FileStorage) LoadFromFile() error {
 	file, err := os.Open(f.filepath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil // файл ещё не существует — нормально
+			return err
 		}
 		return err
 	}
