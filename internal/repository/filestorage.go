@@ -149,6 +149,7 @@ func (f *FileStorage) Snapshot() []models.Metrics {
 
 // Опционально: метод загрузки из файла при старте
 func (f *FileStorage) LoadFromFile() error {
+	fmt.Printf("+++++++++++++++++ Loading from file: %s\n", f.filepath)
 	file, err := os.Open(f.filepath)
 	if err != nil {
 		if os.IsNotExist(err) {
