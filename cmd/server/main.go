@@ -21,12 +21,13 @@ func main() {
 
 	// memStor := repository.NewMemStorage()
 	memStor := repository.NewFileStorage(storFilePath, time.Duration(storInterval)*time.Second)
-	stor := handlers.NewStor(memStor)
 
 	if restore {
 		fmt.Println("Loaded from file")
 		memStor.LoadFromFile()
 	}
+
+	stor := handlers.NewStor(memStor)
 
 	r := chi.NewRouter()
 	r.Post("/update/{metricType}/{metricName}/{metricValue}", requestLogger(gzipMiddleware(stor.HandleMetricUpdate)))
