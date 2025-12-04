@@ -165,8 +165,10 @@ func (f *FileStorage) LoadFromFile() error {
 		panic(err)
 	}
 
+	fmt.Printf("+++++++++ Len metrics: %d\n", len(metrics))
+
 	for _, m := range metrics {
-		fmt.Printf("+++++++++++++ file_metric: %v", m)
+		fmt.Printf("+++++++++++++ file_metric: %v\n", m)
 		switch m.MType {
 		case "gauge":
 			f.AddGauge(m.ID, *m.Value)
