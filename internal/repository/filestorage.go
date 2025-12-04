@@ -152,6 +152,7 @@ func (f *FileStorage) LoadFromFile() error {
 	fmt.Printf("+++++++++++++++++ Loading from file: %s\n", f.filepath)
 	file, err := os.Open(f.filepath)
 	if err != nil {
+		fmt.Println("+++++++++ Something goes wrong!!!")
 		if os.IsNotExist(err) {
 			return err
 		}
