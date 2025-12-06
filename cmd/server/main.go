@@ -38,7 +38,7 @@ func main() {
 	r.Get("/value/{metricType}/{metricName}", requestLogger(gzipMiddleware(stor.HandleMetricGet)))
 	r.Get("/", requestLogger(gzipMiddleware(stor.HandleMain)))
 
-	fmt.Printf("Server started at http://%s\nParameters: %v\n, filepath: %s\n", addr, os.Args, storFilePath)
+	fmt.Printf("Server started at http://%s\nParameters: %v\n, filepath: %s, interval: %d\n", addr, os.Args, storFilePath, storInterval)
 	err := http.ListenAndServe(addr, r)
 	if err != nil {
 		panic(err)

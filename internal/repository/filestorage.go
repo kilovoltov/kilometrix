@@ -108,7 +108,6 @@ func (f *FileStorage) saveToFile() error {
 }
 
 func (f *FileStorage) AddGauge(name string, value float64) error {
-	fmt.Printf("==> 2 <== Added gauge: %s with value %f\n", name, value)
 	if err := f.mem.AddGauge(name, value); err != nil {
 		return err
 	}
@@ -121,7 +120,6 @@ func (f *FileStorage) AddGauge(name string, value float64) error {
 }
 
 func (f *FileStorage) AddCounter(name string, value int64) error {
-	fmt.Printf("==> 2 <== Added counter: %s with value %d\n", name, value)
 	if err := f.mem.AddCounter(name, value); err != nil {
 		return err
 	}
@@ -159,7 +157,7 @@ func (f *FileStorage) LoadFromFile() error {
 	if err != nil {
 		fmt.Printf("+++++++++ Something goes wrong: %v", err)
 		if os.IsNotExist(err) {
-			return err
+			return nil // если файла нет - это может быть нормаьлно
 		}
 		return err
 	}
@@ -171,10 +169,7 @@ func (f *FileStorage) LoadFromFile() error {
 		panic(err)
 	}
 
-	fmt.Printf("+++++++++ Len metrics: %d\n", len(metrics))
-
 	for _, m := range metrics {
-		fmt.Printf("+++++++++++++ file_metric: %v\n", m)
 		switch m.MType {
 		case "gauge":
 			f.AddGauge(m.ID, *m.Value)
