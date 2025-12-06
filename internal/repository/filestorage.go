@@ -40,7 +40,10 @@ func (f *FileStorage) runPeriodicSaver() {
 		case <-done:
 			return
 		case <-ticker.C:
-			_ = f.saveToFile() // игнорируем ошибку или логируем
+			err := f.saveToFile()
+			if err != nil {
+				fmt.Println(err)
+			}
 		}
 	}
 }
