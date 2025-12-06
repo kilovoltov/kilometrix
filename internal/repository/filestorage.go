@@ -94,6 +94,8 @@ func (f *FileStorage) saveToFile() error {
 		return err
 	}
 
+	fileExistsAndNotEmpty(f.filepath)
+
 	// Запись в формате JSONL
 	// encoder := json.NewEncoder(file)
 	// for _, m := range snapshot {
@@ -182,4 +184,19 @@ func (f *FileStorage) LoadFromFile() error {
 	}
 
 	return nil
+}
+
+func fileExistsAndNotEmpty(filename string) {
+	info, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		fmt.Printf("=============: File doesn't exist: %v", err) // файл не существует
+	}
+	if err != nil {
+		fmt.Printf("=============: Other ERROR: %v", err) // другая ошибка (например, нет прав)
+	}
+
+	// Проверяем, что файл не пустой
+	if info.Size() > 0 {
+		fmt.Printf("=============: File exists and not empty\n")
+	}
 }
