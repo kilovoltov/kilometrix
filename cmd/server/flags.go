@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
 	"strconv"
 )
@@ -31,7 +32,7 @@ func parseFlags() {
 	if envStorInterval := os.Getenv("STORE_INTERVAL"); envStorInterval != "" {
 		interval, err := strconv.Atoi(envStorInterval)
 		if err != nil {
-			panic(err)
+			fmt.Printf("Ошбика преобразования STORE_INTERVAL: %v", err)
 		}
 		storInterval = interval
 	}

@@ -12,7 +12,7 @@ import (
 // По умолчанию установлен no-op-логер, который не выводит никаких сообщений.
 var Log *zap.Logger = zap.NewNop()
 
-// Initialize инициализирует синглтон логера с необходимым уровнем логирования.
+// LoggerInitialize инициализирует синглтон логера с необходимым уровнем логирования.
 func LoggerInitialize(level string) error {
 	// преобразуем текстовый уровень логирования в zap.AtomicLevel
 	lvl, err := zap.ParseAtomicLevel(level)

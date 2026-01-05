@@ -1,3 +1,4 @@
+// Package sender provides methods for sending metrics to server
 package sender
 
 import (
@@ -8,7 +9,7 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
-// отправляет одну метрику на сервер
+// SendMetric отправляет одну метрику на сервер
 func SendMetric(serverAddress string, client *resty.Client, metric models.Metric) error {
 	url := fmt.Sprintf("http://%s/update/%s/%s/%s",
 		serverAddress,

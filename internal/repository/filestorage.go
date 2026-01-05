@@ -14,6 +14,7 @@ type FileStorage struct {
 
 	filepath string
 	interval time.Duration
+	done     chan struct{}
 }
 
 func NewFileStorage(filepath string, interval time.Duration) *FileStorage {
@@ -21,6 +22,7 @@ func NewFileStorage(filepath string, interval time.Duration) *FileStorage {
 		mem:      NewMemStorage(),
 		filepath: filepath,
 		interval: interval,
+		done:     make(chan struct{}),
 	}
 
 	if interval > 0 {
@@ -34,10 +36,9 @@ func (f *FileStorage) runPeriodicSaver() {
 	ticker := time.NewTicker(f.interval)
 	defer ticker.Stop()
 
-	done := make(chan bool)
 	for {
 		select {
-		case <-done:
+		case <-f.done:
 			return
 		case <-ticker.C:
 			err := f.saveToFile()
@@ -46,6 +47,11 @@ func (f *FileStorage) runPeriodicSaver() {
 			}
 		}
 	}
+}
+
+// Close закрывает канал done, что приводит к завершению горутины
+func (f *FileStorage) Close() {
+	close(f.done)
 }
 
 func (f *FileStorage) saveToFile() error {
@@ -150,7 +156,7 @@ func (f *FileStorage) Snapshot() []models.Metrics {
 	return f.mem.Snapshot()
 }
 
-// Опционально: метод загрузки из файла при старте
+// LoadFromFile (опционально) метод загрузки из файла при старте
 func (f *FileStorage) LoadFromFile() error {
 	fmt.Printf("+++++++++++++++++ Loading from file: %s\n", f.filepath)
 	file, err := os.Open(f.filepath)
@@ -166,7 +172,7 @@ func (f *FileStorage) LoadFromFile() error {
 	var metrics []models.Metrics
 	decoder := json.NewDecoder(file)
 	if err := decoder.Decode(&metrics); err != nil {
-		panic(err)
+		fmt.Println(err)
 	}
 
 	for _, m := range metrics {

@@ -15,7 +15,7 @@ import (
 func main() {
 	parseFlags()
 	if err := LoggerInitialize(logLevel); err != nil {
-		panic(err)
+		fmt.Println(err)
 	}
 	defer fmt.Println("STOPe!")
 
@@ -41,6 +41,6 @@ func main() {
 	fmt.Printf("Server started at http://%s\nParameters: %v\n, filepath: %s, interval: %d\n", addr, os.Args, storFilePath, storInterval)
 	err := http.ListenAndServe(addr, r)
 	if err != nil {
-		panic(err)
+		fmt.Printf("Ошибка запуска сервера: %v", err)
 	}
 }

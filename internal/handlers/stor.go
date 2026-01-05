@@ -1,3 +1,4 @@
+// Package handlers provides functions to handle requests
 package handlers
 
 import (
@@ -15,19 +16,19 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-// Тип для хранения метрик в памяти
+// Stor Тип для хранения метрик в памяти
 type Stor struct {
 	repo repository.MetricStorage
 }
 
-// Конструктор Stor
+// NewStor Конструктор Stor
 func NewStor(rs repository.MetricStorage) *Stor {
 	return &Stor{
 		repo: rs,
 	}
 }
 
-// Функция для обработки запросов на добавление метрик
+// HandleMetricUpdate функция для обработки запросов на добавление метрик
 func (s *Stor) HandleMetricUpdate(w http.ResponseWriter, r *http.Request) {
 
 	metricType := chi.URLParam(r, "metricType")
@@ -74,7 +75,7 @@ func (s *Stor) HandleMetricUpdate(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Metric %s updated successfully", metricName)
 }
 
-// Функция для обработки запроса на получение метрики
+// HandleMetricGet функция для обработки запроса на получение метрики
 func (s *Stor) HandleMetricGet(w http.ResponseWriter, r *http.Request) {
 	metricType, metricName := chi.URLParam(r, "metricType"), chi.URLParam(r, "metricName")
 	var vString string
@@ -101,7 +102,7 @@ func (s *Stor) HandleMetricGet(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(vString))
 }
 
-// Функция для отображения списка метрик
+// HandleMain функция для отображения списка метрик
 func (s *Stor) HandleMain(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
 		http.Error(w, "Invalid path", http.StatusNotFound)
@@ -217,7 +218,7 @@ func (s *Stor) HandleValueJSON(w http.ResponseWriter, r *http.Request) {
 	}
 	dataJSON, err := json.Marshal(data)
 	if err != nil {
-		panic(err)
+		fmt.Println(err)
 	}
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)

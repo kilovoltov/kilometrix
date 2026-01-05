@@ -41,7 +41,10 @@ func SendMetricJSON(serverAddress string, client *resty.Client, metric models.Me
 	}
 
 	// Сжимаем JSON с помощью gzip
-	compressedData, _ := GzipCompress(jsonData)
+	compressedData, err := GzipCompress(jsonData)
+	if err != nil {
+		log.Fatal("Ошибка сжатия gzip:", err)
+	}
 
 	resp, err := client.R().
 		SetHeader("Content-Encoding", "gzip").

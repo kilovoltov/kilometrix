@@ -1,3 +1,4 @@
+// Package repository provides some storages
 package repository
 
 import (
@@ -6,7 +7,7 @@ import (
 	"github.com/kilovoltov/kilometrix/internal/models"
 )
 
-// Интерфейс для работы с хранилищем метрик
+//MetricStorage Интерфейс для работы с хранилищем метрик
 type MetricStorage interface {
 	AddGauge(name string, value float64) error
 	AddCounter(name string, value int64) error
@@ -17,13 +18,13 @@ type MetricStorage interface {
 	Snapshot() []models.Metrics
 }
 
-// Тип для хранения метрик в памяти
+//MemStorage Тип для хранения метрик в памяти
 type MemStorage struct {
 	metricsGauge   map[string]float64
 	metricsCounter map[string]int64
 }
 
-// Конструктор MemStorage
+//NewMemStorage Конструктор MemStorage
 func NewMemStorage() *MemStorage {
 	return &MemStorage{
 		metricsGauge:   make(map[string]float64),
@@ -51,19 +52,19 @@ func (ms *MemStorage) GetCounterNames() []string {
     return cKeys
 }
 
-// Добавление метрики типа Gauge в хранилище
+//AddGauge Добавление метрики типа Gauge в хранилище
 func (ms *MemStorage) AddGauge(name string, value float64) error {
 	ms.metricsGauge[name] = value
 	return nil
 }
 
-// Добавление метрики типа Counter в хранилище
+//AddCounter Добавление метрики типа Counter в хранилище
 func (ms *MemStorage) AddCounter(name string, value int64) error {
 	ms.metricsCounter[name] += value
 	return nil
 }
 
-// Получение метрики по имени
+//GetGauge Получение метрики по имени
 func (ms *MemStorage) GetGauge(name string) (float64, error) {
 	metric, ok := ms.metricsGauge[name]
 	if !ok {
