@@ -11,6 +11,7 @@ var (
 	addr         string
 	logLevel     string
 	storFilePath string
+	dsn          string
 	storInterval int
 	restore      bool
 )
@@ -20,9 +21,13 @@ func parseFlags() {
 	flag.StringVar(&logLevel, "l", "info", "log level")
 	flag.IntVar(&storInterval, "i", 15, "stor interval, sec")
 	flag.StringVar(&storFilePath, "f", "./metrics.json", "filestorage path")
+	flag.StringVar(&dsn, "d", "", "database connection string")
 	flag.BoolVar(&restore, "r", false, "restore from file")
 	flag.Parse()
 
+	if envDSN := os.Getenv("DATABASE_DSN"); envDSN != "" {
+		dsn = envDSN
+	}
 	if envRunAddr := os.Getenv("ADDRESS"); envRunAddr != "" {
 		addr = envRunAddr
 	}
