@@ -1,32 +1,46 @@
 package main
 
 import (
-    "flag"
-    "fmt"
-    "net/http"
-    "github.com/kilovoltov/kilometrix/internal/repository"
-    "github.com/kilovoltov/kilometrix/internal/handlers"
+	"fmt"
+	"net/http"
+	"os"
+	"time"
 
-    "github.com/go-chi/chi/v5"
+	"github.com/kilovoltov/kilometrix/internal/handlers"
+	"github.com/kilovoltov/kilometrix/internal/repository"
+
+	"github.com/go-chi/chi/v5"
 )
 
 func main() {
-    // переменная для адреса сервера со значением по умолчанию
-    var addr = flag.String("a", "localhost:8080", "address of the server")
+	parseFlags()
+	if err := LoggerInitialize(logLevel); err != nil {
+		fmt.Println(err)
+	}
+	defer fmt.Println("STOPe!")
 
-    flag.Parse()
+	// memStor := repository.NewMemStorage()
+	memStor := repository.NewFileStorage(storFilePath, time.Duration(storInterval)*time.Second)
 
-    memStor := repository.NewMemStorage()
-    stor := handlers.NewStor(memStor)
+	if restore {
+		fmt.Println("Loaded from file")
+		memStor.LoadFromFile()
+	}
 
-    r := chi.NewRouter()
-    r.Post("/update/{metricType}/{metricName}/{metricValue}", stor.HandleMetricUpdate)
-    r.Get("/value/{metricType}/{metricName}", stor.HandleMetricGet)
-    r.Get("/", stor.HandleMain)
+	stor := handlers.NewStor(memStor)
 
-    fmt.Printf("Server started at http://%s\n", *addr)
-    err := http.ListenAndServe(*addr, r)
-    if err != nil {
-        panic(err)
-    }
+	r := chi.NewRouter()
+	r.Post("/update/{metricType}/{metricName}/{metricValue}", requestLogger(gzipMiddleware(stor.HandleMetricUpdate)))
+	r.Post("/update", gzipMiddleware(stor.HandleMetricUpdateJSON))
+	r.Post("/update/", requestLogger(gzipMiddleware(stor.HandleMetricUpdateJSON)))
+	r.Post("/value", requestLogger(gzipMiddleware(stor.HandleValueJSON)))
+	r.Post("/value/", requestLogger(gzipMiddleware(stor.HandleValueJSON)))
+	r.Get("/value/{metricType}/{metricName}", requestLogger(gzipMiddleware(stor.HandleMetricGet)))
+	r.Get("/", requestLogger(gzipMiddleware(stor.HandleMain)))
+
+	fmt.Printf("Server started at http://%s\nParameters: %v\n, filepath: %s, interval: %d\n", addr, os.Args, storFilePath, storInterval)
+	err := http.ListenAndServe(addr, r)
+	if err != nil {
+		fmt.Printf("Ошибка запуска сервера: %v", err)
+	}
 }
