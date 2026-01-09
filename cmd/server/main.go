@@ -1,11 +1,13 @@
 package main
 
 import (
-	// "context"
+	"context"
 	"database/sql"
 	"fmt"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/kilovoltov/kilometrix/internal/handlers"
@@ -30,10 +32,18 @@ func (a *App) pingDatabaseHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	parseFlags()
+
+	ctx, stop := signal.NotifyContext(
+		context.Background(),
+		os.Interrupt, // syscall.SIGINT
+		syscall.SIGTERM,
+	)
+	defer stop()
+
 	if err := LoggerInitialize(logLevel); err != nil {
 		fmt.Println(err)
 	}
-	defer fmt.Println("STOPe!")
+	defer Log.Info("Saving data")
 
 	db, dberr := sql.Open("pgx", dsn)
 	if dberr != nil {
@@ -47,12 +57,6 @@ func main() {
 	}
 	// Создаём приложение с зависимостями
 	app := &App{DB: db}
-
-	// ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-    // defer cancel()
-    // if dberr = db.PingContext(ctx); dberr != nil {
-    //     panic(dberr)
-    // }
 
 	// memStor := repository.NewMemStorage()
 	memStor := repository.NewFileStorage(storFilePath, time.Duration(storInterval)*time.Second)
@@ -72,11 +76,21 @@ func main() {
 	r.Post("/value/", requestLogger(gzipMiddleware(stor.HandleValueJSON)))
 	r.Get("/value/{metricType}/{metricName}", requestLogger(gzipMiddleware(stor.HandleMetricGet)))
 	r.Get("/", requestLogger(gzipMiddleware(stor.HandleMain)))
-	r.Get("/ping", app.pingDatabaseHandler)
+	r.Get("/ping", requestLogger(app.pingDatabaseHandler))
+
+	// Запуск сервера в фоне (graceful sutdown)
+	go func() {
+		if err := http.ListenAndServe(addr, r); err != nil && err != http.ErrServerClosed {
+			fmt.Printf("Ошибка запуска сервера: %v", err)
+		}
+	}()
 
 	fmt.Printf("Server started at http://%s\nParameters: %v\n, filepath: %s, interval: %d\n", addr, os.Args, storFilePath, storInterval)
-	err := http.ListenAndServe(addr, r)
-	if err != nil {
-		fmt.Printf("Ошибка запуска сервера: %v", err)
-	}
+	fmt.Println("Press Ctrl+C to interrupt.")
+
+	<-ctx.Done()
+
+	fmt.Println("Server was interrupted")
+
+	memStor.SaveToFile()
 }

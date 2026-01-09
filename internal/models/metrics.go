@@ -1,3 +1,4 @@
+// Package models provides Metrics structure
 package models
 
 type MetricType string
