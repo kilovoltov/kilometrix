@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"net/http"
 	"os"
@@ -12,23 +11,11 @@ import (
 
 	"github.com/kilovoltov/kilometrix/internal/handlers"
 	"github.com/kilovoltov/kilometrix/internal/repository"
+	"go.uber.org/zap"
 
 	"github.com/go-chi/chi/v5"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
-
-// App — структура для хранения зависимостей (например, БД)
-type App struct {
-	DB *sql.DB
-}
-
-func (a *App) pingDatabaseHandler(w http.ResponseWriter, r *http.Request) {
-	if err := a.DB.Ping(); err != nil {
-		fmt.Printf("Database ping failed: %v", err)
-		http.Error(w, "Database connection failed", http.StatusInternalServerError)
-		return
-	}
-}
 
 func main() {
 	parseFlags()
@@ -45,28 +32,21 @@ func main() {
 	}
 	defer Log.Info("Saving data")
 
-	db, dberr := sql.Open("pgx", dsn)
-	if dberr != nil {
-		panic(dberr)
+	var mStor repository.MetricStorage
+
+	if dsn == "" {
+		if storFilePath == "" {
+			mStor = repository.NewMemStorage()
+		} else {
+			mStor = repository.NewFileStorage(storFilePath, time.Duration(storInterval)*time.Second, restore)
+		}
+	} else {
+		mStor = repository.NewDBStorage(dsn)
 	}
-	defer db.Close()
-
-	// Проверка соединения при старте
-	if err := db.Ping(); err != nil {
-		fmt.Printf("Failed to ping database on startup: %v", err)
+	if err := mStor.InitStorage(); err != nil {
+		Log.Fatal("Init Storage Error", zap.Error(err))
 	}
-	// Создаём приложение с зависимостями
-	app := &App{DB: db}
-
-	// memStor := repository.NewMemStorage()
-	memStor := repository.NewFileStorage(storFilePath, time.Duration(storInterval)*time.Second)
-
-	if restore {
-		fmt.Println("Loaded from file")
-		memStor.LoadFromFile()
-	}
-
-	stor := handlers.NewStor(memStor)
+	stor := handlers.NewStor(mStor)
 
 	r := chi.NewRouter()
 	r.Post("/update/{metricType}/{metricName}/{metricValue}", requestLogger(gzipMiddleware(stor.HandleMetricUpdate)))
@@ -76,7 +56,7 @@ func main() {
 	r.Post("/value/", requestLogger(gzipMiddleware(stor.HandleValueJSON)))
 	r.Get("/value/{metricType}/{metricName}", requestLogger(gzipMiddleware(stor.HandleMetricGet)))
 	r.Get("/", requestLogger(gzipMiddleware(stor.HandleMain)))
-	r.Get("/ping", requestLogger(app.pingDatabaseHandler))
+	r.Get("/ping", requestLogger(stor.HandleCheckStorage))
 
 	// Запуск сервера в фоне (graceful sutdown)
 	go func() {
@@ -92,5 +72,5 @@ func main() {
 
 	fmt.Println("Server was interrupted")
 
-	memStor.SaveToFile()
+	mStor.CloseStorage()
 }

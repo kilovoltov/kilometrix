@@ -16,6 +16,9 @@ type MetricStorage interface {
 	GetGaugesNames() []string
 	GetCounterNames() []string
 	Snapshot() []models.Metrics
+	CheckStorage() error
+	InitStorage() error
+	CloseStorage() error
 }
 
 //MemStorage Тип для хранения метрик в памяти
@@ -30,6 +33,14 @@ func NewMemStorage() *MemStorage {
 		metricsGauge:   make(map[string]float64),
 		metricsCounter: make(map[string]int64),
 	}
+}
+
+func (ms *MemStorage) InitStorage() error {
+	return nil
+}
+
+func (ms *MemStorage) CloseStorage() error {
+	return nil
 }
 
 func (ms *MemStorage) GetGaugesNames() []string {
@@ -94,4 +105,8 @@ func (ms *MemStorage) Snapshot() []models.Metrics {
 	}
 
 	return snapshot
+}
+
+func (ms *MemStorage) CheckStorage() error {
+	return nil
 }

@@ -224,3 +224,10 @@ func (s *Stor) HandleValueJSON(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write(dataJSON)
 }
+
+func (s *Stor) HandleCheckStorage(w http.ResponseWriter, r *http.Request) {
+	err := s.repo.CheckStorage()
+	if err != nil {
+		http.Error(w, "Storage error", http.StatusInternalServerError)
+	}
+}

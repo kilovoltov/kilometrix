@@ -14,14 +14,16 @@ type FileStorage struct {
 
 	filepath string
 	interval time.Duration
+	restore  bool
 	done     chan struct{}
 }
 
-func NewFileStorage(filepath string, interval time.Duration) *FileStorage {
+func NewFileStorage(filepath string, interval time.Duration, r bool) *FileStorage {
 	fs := &FileStorage{
 		mem:      NewMemStorage(),
 		filepath: filepath,
 		interval: interval,
+		restore:  r,
 		done:     make(chan struct{}),
 	}
 
@@ -30,6 +32,19 @@ func NewFileStorage(filepath string, interval time.Duration) *FileStorage {
 	}
 
 	return fs
+}
+
+func (f *FileStorage) InitStorage() error {
+	if f.restore {
+		err := f.LoadFromFile()
+		return err
+	}
+	return nil
+}
+
+func (f *FileStorage) CloseStorage() error {
+	err := f.SaveToFile()
+	return err
 }
 
 func (f *FileStorage) runPeriodicSaver() {
@@ -50,9 +65,9 @@ func (f *FileStorage) runPeriodicSaver() {
 }
 
 // Close закрывает канал done, что приводит к завершению горутины
-func (f *FileStorage) Close() {
-	close(f.done)
-}
+// func (f *FileStorage) Close() {
+// 	close(f.done)
+// }
 
 func (f *FileStorage) SaveToFile() error {
 	// Делаем снимок данных
@@ -185,6 +200,14 @@ func (f *FileStorage) LoadFromFile() error {
 	}
 
 	return nil
+}
+
+func (f *FileStorage) CheckStorage() error {
+	_, err := os.Stat(f.filepath)
+	if err != nil {
+		fmt.Printf("ERROR: %v", err)
+	}
+	return err
 }
 
 // func fileExistsAndNotEmpty(filename string) {
