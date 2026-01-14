@@ -65,7 +65,7 @@ func (db *DBStorage) CloseStorage() error {
 
 func (db *DBStorage) GetMetricNamesByType(t string) []string {
 	var names []string
-	rows, err := db.DB.Query("SELECT metric_name FROM storage.metrics WHERE metric_type = ?", t)
+	rows, err := db.DB.Query("SELECT metric_name FROM storage.metrics WHERE metric_type = $1", t)
 	if err != nil {
 		fmt.Printf("ERROR GetGaugesNames from DB storage: %v", err)
 		return nil
@@ -130,7 +130,7 @@ func (db *DBStorage) AddCounter(name string, value int64) error {
 func (db *DBStorage) GetGauge(name string) (float64, error) {
 	var v float64
 	row := db.DB.QueryRow(
-		"SELECT gauge_value FROM storage.metrics WHERE metric_name = ? AND metric_type = 'gauge'", name)
+		"SELECT gauge_value FROM storage.metrics WHERE metric_name = $1 AND metric_type = 'gauge'", name)
 	// порядок переменных должен соответствовать порядку колонок в запросе
 	err := row.Scan(&v)
 	if err != nil {
@@ -143,7 +143,7 @@ func (db *DBStorage) GetGauge(name string) (float64, error) {
 func (db *DBStorage) GetCounter(name string) (int64, error) {
 	var v int64
 	row := db.DB.QueryRow(
-		"SELECT counter_value FROM storage.metrics WHERE metric_name = ? AND metric_type = 'counter'", name)
+		"SELECT counter_value FROM storage.metrics WHERE metric_name = $1 AND metric_type = 'counter'", name)
 	// порядок переменных должен соответствовать порядку колонок в запросе
 	err := row.Scan(&v)
 	if err != nil {
