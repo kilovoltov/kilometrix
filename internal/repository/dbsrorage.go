@@ -2,11 +2,13 @@ package repository
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/golang-migrate/migrate/v4"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/golang-migrate/migrate/v4/source/github"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/kilovoltov/kilometrix/internal/models"
@@ -47,7 +49,7 @@ func (db *DBStorage) InitStorage() error {
 
 	// Выполняем все неприменённые миграции вверх
 	err = m.Up()
-	if err != nil && err != migrate.ErrNoChange {
+	if err != nil && !errors.Is(err, migrate.ErrNoChange) { // err != migrate.ErrNoChange
 		return err
 	}
 
@@ -148,6 +150,39 @@ func (db *DBStorage) GetCounter(name string) (int64, error) {
 		fmt.Printf("ERROR GetCounter row.Scan(): %v", err)
 	}
 	return v, err
+}
+
+func (db *DBStorage) AddMetrics(metrics []models.Metrics) error {
+	queryString := `
+		INSERT INTO storage.metrics (metric_name, metric_type, gauge_value, counter_value)
+		VALUES %s
+		ON CONFLICT (metric_name, metric_type)
+		DO UPDATE SET
+			gauge_value = EXCLUDED.gauge_value,
+			counter_value = storage.metrics.counter_value + EXCLUDED.counter_value;`
+
+	valueStrings := make([]string, 0, len(metrics))
+
+	for _, v := range metrics {
+		switch v.MType {
+		case "gauge":
+			valueStrings = append(
+				valueStrings,
+				fmt.Sprintf("('%s', '%s', %g, %s)", v.ID, v.MType, *v.Value, "NULL"),
+			)
+		case "counter":
+			valueStrings = append(
+				valueStrings,
+				fmt.Sprintf("('%s', '%s', %s, %d)", v.ID, v.MType, "NULL", *v.Delta),
+			)
+		}
+	}
+
+	queryString = fmt.Sprintf(queryString, strings.Join(valueStrings, ","))
+
+	_, err := db.DB.Exec(queryString)
+
+	return err
 }
 
 func (db *DBStorage) Snapshot() []models.Metrics {

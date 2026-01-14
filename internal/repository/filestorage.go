@@ -151,6 +151,18 @@ func (f *FileStorage) AddCounter(name string, value int64) error {
 	return nil
 }
 
+func (f *FileStorage) AddMetrics(metrics []models.Metrics) error {
+	for _, v := range metrics {
+		switch v.MType {
+		case "gauge":
+			f.AddGauge(v.ID, *v.Value)
+		case "counter":
+			f.AddCounter(v.ID, *v.Delta)
+		}
+	}
+	return nil
+}
+
 func (f *FileStorage) GetGauge(name string) (float64, error) {
 	return f.mem.GetGauge(name)
 }

@@ -90,6 +90,10 @@ func (m *MockStorage) GetCounterNames() []string {
     return cKeys
 }
 
+func (m *MockStorage) AddMetrics([]models.Metrics) error {
+	return nil
+}
+
 func (m *MockStorage) Snapshot() []models.Metrics {
 	snapshot := make([]models.Metrics, 0, len(m.counters)+len(m.gauges))
 

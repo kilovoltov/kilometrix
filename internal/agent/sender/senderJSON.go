@@ -1,15 +1,67 @@
 package sender
 
 import (
-	"fmt"
-	"strconv"
 	"encoding/json"
+	"fmt"
 	"log"
+	"strconv"
 
 	"github.com/kilovoltov/kilometrix/internal/models"
 
 	"github.com/go-resty/resty/v2"
 )
+
+func SendMetricsJSON(serverAddress string, client *resty.Client, metrics models.Storage) error {
+	url := fmt.Sprintf("http://%s/updates/",
+		serverAddress,
+	)
+	data := make([]models.Metrics, len(metrics))
+
+	for _, metric := range metrics {
+		switch metric.Type {
+		case "gauge":
+			valueFloat, _ := strconv.ParseFloat(metric.Value, 64)
+			data = append(data, models.Metrics{
+				ID:    metric.Name,
+				MType: string(metric.Type),
+				Value: &valueFloat,
+			})
+		case "counter":
+			valueInt, _ := strconv.ParseInt(metric.Value, 10, 64)
+			data = append(data, models.Metrics{
+				ID:    metric.Name,
+				MType: string(metric.Type),
+				Delta: &valueInt,
+			})
+		}
+	}
+	// Сериализуем структуру в JSON
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		log.Fatal("Ошибка сериализации в JSON:", err)
+	}
+
+	// Сжимаем JSON с помощью gzip
+	compressedData, err := GzipCompress(jsonData)
+	if err != nil {
+		log.Fatal("Ошибка сжатия gzip:", err)
+	}
+
+	resp, err := client.R().
+		SetHeader("Content-Encoding", "gzip").
+		SetHeader("Content-Type", "application/json").
+		SetBody(compressedData).
+		Post(url)
+
+	if err != nil {
+		return fmt.Errorf("failed to send metrics %v: %w", data, err)
+	}
+	if resp.StatusCode() != 200 {
+		return fmt.Errorf("non-200 status for metrics %v: %s", data, resp.Status())
+	}
+
+	return nil
+}
 
 func SendMetricJSON(serverAddress string, client *resty.Client, metric models.Metric) error {
 	url := fmt.Sprintf("http://%s/update",
@@ -57,9 +109,7 @@ func SendMetricJSON(serverAddress string, client *resty.Client, metric models.Me
 	}
 	if resp.StatusCode() != 200 {
 		return fmt.Errorf("non-200 status for metric %s: %s", metric.Name, resp.Status())
-	} 
-	// else {
-	// 	fmt.Println(string(resp.Body()))
-	// }
+	}
+
 	return nil
 }

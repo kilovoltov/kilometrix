@@ -52,6 +52,7 @@ func main() {
 	r.Post("/update/{metricType}/{metricName}/{metricValue}", requestLogger(gzipMiddleware(stor.HandleMetricUpdate)))
 	r.Post("/update", gzipMiddleware(stor.HandleMetricUpdateJSON))
 	r.Post("/update/", requestLogger(gzipMiddleware(stor.HandleMetricUpdateJSON)))
+	r.Post("/updates/", requestLogger(gzipMiddleware(stor.HandleMetricsUpdateJSON)))
 	r.Post("/value", requestLogger(gzipMiddleware(stor.HandleValueJSON)))
 	r.Post("/value/", requestLogger(gzipMiddleware(stor.HandleValueJSON)))
 	r.Get("/value/{metricType}/{metricName}", requestLogger(gzipMiddleware(stor.HandleMetricGet)))

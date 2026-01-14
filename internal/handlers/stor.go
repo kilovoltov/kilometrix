@@ -182,6 +182,29 @@ func (s *Stor) HandleMetricUpdateJSON(w http.ResponseWriter, r *http.Request) {
 	w.Write(buf.Bytes())
 }
 
+func (s *Stor) HandleMetricsUpdateJSON(w http.ResponseWriter, r *http.Request) {
+	var metricsJSON []models.Metrics
+	var buf bytes.Buffer
+	_, err := buf.ReadFrom(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	// десериализуем JSON в metricsJSON
+	if err = json.Unmarshal(buf.Bytes(), &metricsJSON); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if err := s.repo.AddMetrics(metricsJSON); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(buf.Bytes())
+}
+
 func (s *Stor) HandleValueJSON(w http.ResponseWriter, r *http.Request) {
 	var metricsJSON models.Metrics
 	var buf bytes.Buffer
