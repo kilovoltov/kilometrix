@@ -98,7 +98,7 @@ func (s *Stor) HandleMetricGet(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, e.Error(), http.StatusNotFound)
 		return
 	}
-
+	fmt.Println(vString)
 	w.Write([]byte(vString))
 }
 
@@ -220,24 +220,30 @@ func (s *Stor) HandleValueJSON(w http.ResponseWriter, r *http.Request) {
 	}
 	// Преобразуем значение в нужный формат
 	var data models.Metrics
+	var er error
 	switch metricsJSON.MType {
 	case "gauge":
-		gValue, _ := s.repo.GetGauge(metricsJSON.ID)
+		gValue, err := s.repo.GetGauge(metricsJSON.ID)
 		data = models.Metrics{
 			ID:    metricsJSON.ID,
 			MType: metricsJSON.MType,
 			Value: &gValue,
 		}
+		er = err
 	case "counter":
-		cValue, _ := s.repo.GetCounter(metricsJSON.ID)
+		cValue, err := s.repo.GetCounter(metricsJSON.ID)
 		data = models.Metrics{
 			ID:    metricsJSON.ID,
 			MType: metricsJSON.MType,
 			Delta: &cValue,
 		}
+		er = err
 	default:
 		http.Error(w, "Invalid metric type", http.StatusBadRequest)
 		return
+	}
+	if er != nil {
+		http.Error(w, "Value not exists", http.StatusNotFound)
 	}
 	dataJSON, err := json.Marshal(data)
 	if err != nil {
