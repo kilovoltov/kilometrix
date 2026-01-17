@@ -5,28 +5,35 @@ import(
 	"github.com/kilovoltov/kilometrix/internal/models"
 )
 
-// RemoveDuplicatesLast убирает повторяющиеся элементы, оставляя
+// RemoveDuplicates убирает повторяющиеся элементы, оставляя
 // последний по уникалной паре (ID + MType)
-func RemoveDuplicatesLast(metrics []models.Metrics) []models.Metrics {
-	type metricKey struct {
-		ID    string
-		MType string
-	}
-	seen := make(map[metricKey]bool)
-	var result []models.Metrics
+// если тип counter то значения суммируются
+func RemoveDuplicates(metrics []models.Metrics) []models.Metrics {
+	gauges := make(map[string]float64)
+	counters := make(map[string]int64)
 
-	for i := len(metrics) - 1; i >= 0; i-- {
-		key := metricKey{ID: metrics[i].ID, MType: metrics[i].MType}
-		if !seen[key] {
-			seen[key] = true
-			result = append(result, metrics[i])
+	for _, m := range metrics {
+		if m.MType == "gauge" && m.Value != nil {
+			gauges[m.ID] = *m.Value
+		} else if m.MType == "counter" && m.Delta != nil {
+			counters[m.ID] += *m.Delta
 		}
 	}
 
-	// Разворачиваем результат в исходный порядок
-	for i, j := 0, len(result)-1; i < j; i, j = i+1, j-1 {
-		result[i], result[j] = result[j], result[i]
+	var result []models.Metrics
+	for id, val := range gauges {
+		result = append(result, models.Metrics{
+			ID:    id,
+			MType: "gauge",
+			Value: &val,
+		})
 	}
-
+	for id, delta := range counters {
+		result = append(result, models.Metrics{
+			ID:    id,
+			MType: "counter",
+			Delta: &delta,
+		})
+	}
 	return result
 }

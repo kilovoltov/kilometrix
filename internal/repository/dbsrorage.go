@@ -164,7 +164,7 @@ func (db *DBStorage) AddMetrics(metrics []models.Metrics) error {
 
 	valueStrings := make([]string, 0, len(metrics))
 
-	metrics = utils.RemoveDuplicatesLast(metrics)
+	metrics = utils.RemoveDuplicates(metrics)
 
 	for _, v := range metrics {
 		switch v.MType {
