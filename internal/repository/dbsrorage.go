@@ -12,6 +12,7 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/github"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/kilovoltov/kilometrix/internal/models"
+	"github.com/kilovoltov/kilometrix/internal/utils"
 )
 
 type DBStorage struct {
@@ -162,6 +163,8 @@ func (db *DBStorage) AddMetrics(metrics []models.Metrics) error {
 			counter_value = storage.metrics.counter_value + EXCLUDED.counter_value;`
 
 	valueStrings := make([]string, 0, len(metrics))
+
+	metrics = utils.RemoveDuplicatesLast(metrics)
 
 	for _, v := range metrics {
 		switch v.MType {

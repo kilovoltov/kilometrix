@@ -199,7 +199,7 @@ func (s *Stor) HandleMetricsUpdateJSON(w http.ResponseWriter, r *http.Request) {
 	if err := s.repo.AddMetrics(metricsJSON); err != nil {
 		fmt.Println(err)
 		fmt.Println(metricsJSON)
-		http.Error(w, "Странная ошибка", http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)  // Странная ошибка
 	}
 
 	w.Header().Add("Content-Type", "application/json")
