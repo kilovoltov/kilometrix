@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/kilovoltov/kilometrix/internal/models"
+	"go.uber.org/zap"
 )
 
 // MetricStorage Интерфейс для работы с хранилищем метрик
@@ -26,17 +27,20 @@ type MetricStorage interface {
 type MemStorage struct {
 	metricsGauge   map[string]float64
 	metricsCounter map[string]int64
+	logger *zap.Logger
 }
 
 // NewMemStorage Конструктор MemStorage
-func NewMemStorage() *MemStorage {
+func NewMemStorage(logger *zap.Logger) *MemStorage {
 	return &MemStorage{
 		metricsGauge:   make(map[string]float64),
 		metricsCounter: make(map[string]int64),
+		logger: logger,
 	}
 }
 
 func (ms *MemStorage) InitStorage() error {
+	fmt.Println("Started with Memstorage")
 	return nil
 }
 

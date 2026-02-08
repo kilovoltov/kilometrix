@@ -27,37 +27,42 @@ func main() {
 	)
 	defer stop()
 
-	if err := LoggerInitialize(logLevel); err != nil {
-		fmt.Println(err)
+	logger, err := NewLogger(logLevel)
+	if err != nil {
+		panic(err)
 	}
-	defer Log.Info("Saving data")
+
+	logger.Info("Logger initialized successfully")
+	defer logger.Sync()
 
 	var mStor repository.MetricStorage
 
 	if dsn == "" {
 		if storFilePath == "" {
-			mStor = repository.NewMemStorage()
+			mStor = repository.NewMemStorage(logger)
 		} else {
-			mStor = repository.NewFileStorage(storFilePath, time.Duration(storInterval)*time.Second, restore)
+			mStor = repository.NewFileStorage(storFilePath, time.Duration(storInterval)*time.Second, restore, logger)
 		}
 	} else {
-		mStor = repository.NewDBStorage(dsn)
+		mStor = repository.NewDBStorage(dsn, logger)
+		defer mStor.CloseStorage()
 	}
 	if err := mStor.InitStorage(); err != nil {
-		Log.Fatal("Init Storage Error", zap.Error(err))
+		logger.Fatal("Init Storage Error", zap.Error(err))
 	}
 	stor := handlers.NewStor(mStor)
-
 	r := chi.NewRouter()
-	r.Post("/update/{metricType}/{metricName}/{metricValue}", requestLogger(gzipMiddleware(stor.HandleMetricUpdate)))
+	r.Use(ErrorLoggerMiddleware(logger))
+	r.Use(RequestLoggerMiddleware(logger))
+	r.Post("/update/{metricType}/{metricName}/{metricValue}", gzipMiddleware(stor.HandleMetricUpdate))
 	r.Post("/update", gzipMiddleware(stor.HandleMetricUpdateJSON))
-	r.Post("/update/", requestLogger(gzipMiddleware(stor.HandleMetricUpdateJSON)))
-	r.Post("/updates/", requestLogger(gzipMiddleware(stor.HandleMetricsUpdateJSON)))
-	r.Post("/value", requestLogger(gzipMiddleware(stor.HandleValueJSON)))
-	r.Post("/value/", requestLogger(gzipMiddleware(stor.HandleValueJSON)))
-	r.Get("/value/{metricType}/{metricName}", requestLogger(gzipMiddleware(stor.HandleMetricGet)))
-	r.Get("/", requestLogger(gzipMiddleware(stor.HandleMain)))
-	r.Get("/ping", requestLogger(stor.HandleCheckStorage))
+	r.Post("/update/", gzipMiddleware(stor.HandleMetricUpdateJSON))
+	r.Post("/updates/", gzipMiddleware(stor.HandleMetricsUpdateJSON))
+	r.Post("/value", gzipMiddleware(stor.HandleValueJSON))
+	r.Post("/value/", gzipMiddleware(stor.HandleValueJSON))
+	r.Get("/value/{metricType}/{metricName}", gzipMiddleware(stor.HandleMetricGet))
+	r.Get("/", gzipMiddleware(stor.HandleMain))
+	r.Get("/ping", gzipMiddleware(stor.HandleCheckStorage))
 
 	// Запуск сервера в фоне (graceful sutdown)
 	go func() {
@@ -71,7 +76,8 @@ func main() {
 
 	<-ctx.Done()
 
-	fmt.Println("Server was interrupted")
+	logger.Info("Server was interrupted")
+	logger.Info("Saving data")
 
 	mStor.CloseStorage()
 }

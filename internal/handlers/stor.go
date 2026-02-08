@@ -157,24 +157,29 @@ func (s *Stor) HandleMain(w http.ResponseWriter, r *http.Request) {
 func (s *Stor) HandleMetricUpdateJSON(w http.ResponseWriter, r *http.Request) {
 	var metricsJSON models.Metrics
 	var buf bytes.Buffer
-	_, err := buf.ReadFrom(r.Body)
-	if err != nil {
+	
+	if _, err := buf.ReadFrom(r.Body); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	// десериализуем JSON в metricsJSON
-	if err = json.Unmarshal(buf.Bytes(), &metricsJSON); err != nil {
+	if err := json.Unmarshal(buf.Bytes(), &metricsJSON); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	// Преобразуем значение в нужный формат
+	var err error
 	switch metricsJSON.MType {
 	case "gauge":
-		s.repo.AddGauge(metricsJSON.ID, *metricsJSON.Value)
+		err = s.repo.AddGauge(metricsJSON.ID, *metricsJSON.Value)
 	case "counter":
-		s.repo.AddCounter(metricsJSON.ID, *metricsJSON.Delta)
+		err = s.repo.AddCounter(metricsJSON.ID, *metricsJSON.Delta)
 	default:
 		http.Error(w, "Invalid metric type", http.StatusBadRequest)
+		return
+	}
+	if err != nil {
+		http.Error(w, "Ошибка добавления метрик", http.StatusInternalServerError)
 		return
 	}
 	w.Header().Add("Content-Type", "application/json")
@@ -197,8 +202,6 @@ func (s *Stor) HandleMetricsUpdateJSON(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := s.repo.AddMetrics(metricsJSON); err != nil {
-		fmt.Println(err)
-		fmt.Println(metricsJSON)
 		http.Error(w, err.Error(), http.StatusInternalServerError)  // Странная ошибка
 	}
 
@@ -261,4 +264,5 @@ func (s *Stor) HandleCheckStorage(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "Storage error", http.StatusInternalServerError)
 	}
+	w.WriteHeader(http.StatusOK)
 }

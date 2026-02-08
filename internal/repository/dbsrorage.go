@@ -5,33 +5,37 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/golang-migrate/migrate/v4/source/github"
+	"github.com/jackc/pgerrcode"
+	"github.com/jackc/pgx/v5/pgconn"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/kilovoltov/kilometrix/internal/models"
 	"github.com/kilovoltov/kilometrix/internal/utils"
+	"go.uber.org/zap"
 )
 
 type DBStorage struct {
 	mem *MemStorage
 	dsn string
 	DB  *sql.DB
+	logger *zap.Logger
 }
 
 // NewDBStorage конструктор DBSrorage
-func NewDBStorage(dsn string) *DBStorage {
+func NewDBStorage(dsn string, logger *zap.Logger) *DBStorage {
 	db, err := sql.Open("pgx", dsn)
 	if err != nil {
 		panic(err)
 	}
-	// defer db.Close()
 
 	// Создаём приложение с зависимостями
 	database := &DBStorage{
-		mem: NewMemStorage(),
+		mem: NewMemStorage(logger),
 		dsn: dsn,
 		DB:  db,
 	}
@@ -39,6 +43,7 @@ func NewDBStorage(dsn string) *DBStorage {
 }
 
 func (db *DBStorage) InitStorage() error {
+	fmt.Println("Started with database storage")
 	// Создаём экземпляр migrate
 	m, err := migrate.New(
 		"file://./migrations", // путь к папке с миграциями
@@ -101,7 +106,7 @@ func (db *DBStorage) GetCounterNames() []string {
 
 // AddGauge Добавление метрики типа Gauge в хранилище
 func (db *DBStorage) AddGauge(name string, value float64) error {
-	_, err := db.DB.Exec(`
+	_, err := db.execWithConnectionRetry(`
 	INSERT INTO storage.metrics (metric_name, metric_type, gauge_value, counter_value)
 	VALUES ($1, $2, $3, $4)
 	ON CONFLICT (metric_name, metric_type)
@@ -115,7 +120,7 @@ func (db *DBStorage) AddGauge(name string, value float64) error {
 
 // AddCounter Добавление метрики типа Counter в хранилище
 func (db *DBStorage) AddCounter(name string, value int64) error {
-	_, err := db.DB.Exec(`
+	_, err := db.execWithConnectionRetry(`
 	INSERT INTO storage.metrics (metric_name, metric_type, gauge_value, counter_value)
 	VALUES ($1, $2, $3, $4)
 	ON CONFLICT (metric_name, metric_type)
@@ -183,9 +188,37 @@ func (db *DBStorage) AddMetrics(metrics []models.Metrics) error {
 
 	queryString = fmt.Sprintf(queryString, strings.Join(valueStrings, ","))
 
-	_, err := db.DB.Exec(queryString)
-
+	_, err := db.execWithConnectionRetry(queryString)
 	return err
+}
+
+// execWithConnectionRetry выполняет Exec с ретраями при ошибках подключения (SQLSTATE Class 08)
+func (db *DBStorage) execWithConnectionRetry(queryString string, args ...any) (sql.Result, error) {
+	backoff := []time.Duration{1 * time.Second, 2 * time.Second, 5 * time.Second}
+	for attempt := 0; ; attempt++ {
+		result, err := db.DB.Exec(queryString, args...)
+		if err == nil {
+			fmt.Println("Add Gauge success!")
+			return result, nil // успех
+		}
+
+		// Пытаемся извлечь *pgconn.PgError через errors.As
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgerrcode.IsConnectionException(pgErr.Code) { //  || pgerrcode.UndefinedTable == pgErr.Code
+			// Это ошибка подключения — пробуем повторить, если остались попытки
+			if attempt < len(backoff) {
+				time.Sleep(backoff[attempt])
+				fmt.Printf("Next attempt")
+				continue
+			}
+		} else {
+			fmt.Println("Add Gauge UNKNOWN ERROR")
+			return result, err
+		}
+
+		// Либо это не ошибка подключения, либо исчерпаны попытки
+		return result, err
+	}
 }
 
 func (db *DBStorage) Snapshot() []models.Metrics {
@@ -217,7 +250,9 @@ func (db *DBStorage) Snapshot() []models.Metrics {
 func (db *DBStorage) CheckStorage() error {
 	err := db.DB.Ping()
 	if err != nil {
-		fmt.Printf("Database ping failed: %v", err)
+		fmt.Printf("Database ping failed: %v\n", err)
+	} else {
+		db.mem.logger.Info("Database ping is OK")
 	}
 	return err
 }

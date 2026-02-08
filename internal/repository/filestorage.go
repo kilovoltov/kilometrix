@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/kilovoltov/kilometrix/internal/models"
+	"go.uber.org/zap"
 )
 
 type FileStorage struct {
@@ -18,9 +19,9 @@ type FileStorage struct {
 	done     chan struct{}
 }
 
-func NewFileStorage(filepath string, interval time.Duration, r bool) *FileStorage {
+func NewFileStorage(filepath string, interval time.Duration, r bool, logger *zap.Logger) *FileStorage {
 	fs := &FileStorage{
-		mem:      NewMemStorage(),
+		mem:      NewMemStorage(logger),
 		filepath: filepath,
 		interval: interval,
 		restore:  r,
@@ -39,6 +40,7 @@ func (f *FileStorage) InitStorage() error {
 		err := f.LoadFromFile()
 		return err
 	}
+	fmt.Println("Srarted with filestorage")
 	return nil
 }
 
