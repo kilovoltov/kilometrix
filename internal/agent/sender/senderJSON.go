@@ -3,7 +3,6 @@ package sender
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"strconv"
 
 	"github.com/kilovoltov/kilometrix/internal/models"
@@ -11,11 +10,12 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
+// SendMetricsJSON отправляет несколько метрик за один раз
 func SendMetricsJSON(serverAddress string, client *resty.Client, metrics models.Storage) error {
 	url := fmt.Sprintf("http://%s/updates/",
 		serverAddress,
 	)
-	data := make([]models.Metrics, len(metrics))
+	data := make([]models.Metrics, 0, len(metrics))
 
 	for _, metric := range metrics {
 		switch metric.Type {
@@ -38,13 +38,15 @@ func SendMetricsJSON(serverAddress string, client *resty.Client, metrics models.
 	// Сериализуем структуру в JSON
 	jsonData, err := json.Marshal(data)
 	if err != nil {
-		log.Fatal("Ошибка сериализации в JSON:", err)
+		fmt.Printf("Ошибка сериализации в JSON: %s\n", err)
+		return err
 	}
 
 	// Сжимаем JSON с помощью gzip
 	compressedData, err := GzipCompress(jsonData)
 	if err != nil {
-		log.Fatal("Ошибка сжатия gzip:", err)
+		fmt.Printf("Ошибка сжатия gzip: %s\n", err)
+		return err
 	}
 
 	resp, err := client.R().
@@ -63,6 +65,7 @@ func SendMetricsJSON(serverAddress string, client *resty.Client, metrics models.
 	return nil
 }
 
+// SendMetricJSON отправляет одну метрику
 func SendMetricJSON(serverAddress string, client *resty.Client, metric models.Metric) error {
 	url := fmt.Sprintf("http://%s/update",
 		serverAddress,
@@ -89,13 +92,15 @@ func SendMetricJSON(serverAddress string, client *resty.Client, metric models.Me
 	// Сериализуем структуру в JSON
 	jsonData, err := json.Marshal(data)
 	if err != nil {
-		log.Fatal("Ошибка сериализации в JSON:", err)
+		fmt.Printf("Ошибка сериализации в JSON: %s\n", err)
+		return err
 	}
 
 	// Сжимаем JSON с помощью gzip
 	compressedData, err := GzipCompress(jsonData)
 	if err != nil {
-		log.Fatal("Ошибка сжатия gzip:", err)
+		fmt.Printf("Ошибка сжатия gzip: %s\n", err)
+		return err
 	}
 
 	resp, err := client.R().

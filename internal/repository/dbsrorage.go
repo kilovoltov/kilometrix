@@ -165,30 +165,44 @@ func (db *DBStorage) AddMetrics(metrics []models.Metrics) error {
 		ON CONFLICT (metric_name, metric_type)
 		DO UPDATE SET
 			gauge_value = EXCLUDED.gauge_value,
-			counter_value = storage.metrics.counter_value + EXCLUDED.counter_value;`
-
-	valueStrings := make([]string, 0, len(metrics))
+			counter_value = CASE
+				WHEN EXCLUDED.counter_value IS NOT NULL
+				THEN storage.metrics.counter_value + EXCLUDED.counter_value
+				ELSE storage.metrics.counter_value
+			END;`
 
 	metrics = utils.RemoveDuplicates(metrics)
+	valueStrings := make([]string, 0, len(metrics))
+	args := make([]any, 0, len(metrics)*3) // 3 параметра для каждой метрики, 4-е - NULL
 
-	for _, v := range metrics {
+	for i, v := range metrics {
 		switch v.MType {
 		case "gauge":
+			if v.Value == nil {
+				return fmt.Errorf("gauge value is nil for metric %s", v.ID)
+			}
 			valueStrings = append(
 				valueStrings,
-				fmt.Sprintf("('%s', '%s', %g, %s)", v.ID, v.MType, *v.Value, "NULL"),
+				fmt.Sprintf("($%d, $%d, $%d, NULL)", i*3+1, i*3+2, i*3+3),
 			)
+			args = append(args, v.ID, v.MType, *v.Value)
 		case "counter":
+			if v.Delta == nil {
+				return fmt.Errorf("counter delta is nil for metric %s", v.ID)
+			}
 			valueStrings = append(
 				valueStrings,
-				fmt.Sprintf("('%s', '%s', %s, %d)", v.ID, v.MType, "NULL", *v.Delta),
+				fmt.Sprintf("($%d, $%d, NULL, $%d)", i*3+1, i*3+2, i*3+3),
 			)
+			args = append(args, v.ID, v.MType, *v.Delta)
+		default:
+			return fmt.Errorf("unknown metric type: %s", v.MType)
 		}
 	}
 
 	queryString = fmt.Sprintf(queryString, strings.Join(valueStrings, ","))
 
-	_, err := db.execWithConnectionRetry(queryString)
+	_, err := db.execWithConnectionRetry(queryString, args...)
 	return err
 }
 
@@ -198,8 +212,9 @@ func (db *DBStorage) execWithConnectionRetry(queryString string, args ...any) (s
 	for attempt := 0; ; attempt++ {
 		result, err := db.DB.Exec(queryString, args...)
 		if err == nil {
-			fmt.Println("Add Gauge success!")
 			return result, nil // успех
+		} else {
+			fmt.Printf("%s\n", err)
 		}
 
 		// Пытаемся извлечь *pgconn.PgError через errors.As
@@ -212,7 +227,6 @@ func (db *DBStorage) execWithConnectionRetry(queryString string, args ...any) (s
 				continue
 			}
 		} else {
-			fmt.Println("Add Gauge UNKNOWN ERROR")
 			return result, err
 		}
 

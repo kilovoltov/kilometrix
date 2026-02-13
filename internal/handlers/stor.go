@@ -203,6 +203,7 @@ func (s *Stor) HandleMetricsUpdateJSON(w http.ResponseWriter, r *http.Request) {
 
 	if err := s.repo.AddMetrics(metricsJSON); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)  // Странная ошибка
+		return
 	}
 
 	w.Header().Add("Content-Type", "application/json")
@@ -249,6 +250,7 @@ func (s *Stor) HandleValueJSON(w http.ResponseWriter, r *http.Request) {
 	}
 	if er != nil {
 		http.Error(w, "Value not exists", http.StatusNotFound)
+		return
 	}
 	dataJSON, err := json.Marshal(data)
 	if err != nil {
@@ -263,6 +265,7 @@ func (s *Stor) HandleCheckStorage(w http.ResponseWriter, r *http.Request) {
 	err := s.repo.CheckStorage()
 	if err != nil {
 		http.Error(w, "Storage error", http.StatusInternalServerError)
+		return
 	}
 	w.WriteHeader(http.StatusOK)
 }
