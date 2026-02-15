@@ -98,7 +98,7 @@ func (s *Stor) HandleMetricGet(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, e.Error(), http.StatusNotFound)
 		return
 	}
-
+	fmt.Println(vString)
 	w.Write([]byte(vString))
 }
 
@@ -157,6 +157,39 @@ func (s *Stor) HandleMain(w http.ResponseWriter, r *http.Request) {
 func (s *Stor) HandleMetricUpdateJSON(w http.ResponseWriter, r *http.Request) {
 	var metricsJSON models.Metrics
 	var buf bytes.Buffer
+	
+	if _, err := buf.ReadFrom(r.Body); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	// десериализуем JSON в metricsJSON
+	if err := json.Unmarshal(buf.Bytes(), &metricsJSON); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	// Преобразуем значение в нужный формат
+	var err error
+	switch metricsJSON.MType {
+	case "gauge":
+		err = s.repo.AddGauge(metricsJSON.ID, *metricsJSON.Value)
+	case "counter":
+		err = s.repo.AddCounter(metricsJSON.ID, *metricsJSON.Delta)
+	default:
+		http.Error(w, "Invalid metric type", http.StatusBadRequest)
+		return
+	}
+	if err != nil {
+		http.Error(w, "Ошибка добавления метрик", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(buf.Bytes())
+}
+
+func (s *Stor) HandleMetricsUpdateJSON(w http.ResponseWriter, r *http.Request) {
+	var metricsJSON []models.Metrics
+	var buf bytes.Buffer
 	_, err := buf.ReadFrom(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -167,16 +200,12 @@ func (s *Stor) HandleMetricUpdateJSON(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	// Преобразуем значение в нужный формат
-	switch metricsJSON.MType {
-	case "gauge":
-		s.repo.AddGauge(metricsJSON.ID, *metricsJSON.Value)
-	case "counter":
-		s.repo.AddCounter(metricsJSON.ID, *metricsJSON.Delta)
-	default:
-		http.Error(w, "Invalid metric type", http.StatusBadRequest)
+
+	if err := s.repo.AddMetrics(metricsJSON); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)  // Странная ошибка
 		return
 	}
+
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(buf.Bytes())
@@ -197,23 +226,30 @@ func (s *Stor) HandleValueJSON(w http.ResponseWriter, r *http.Request) {
 	}
 	// Преобразуем значение в нужный формат
 	var data models.Metrics
+	var er error
 	switch metricsJSON.MType {
 	case "gauge":
-		gValue, _ := s.repo.GetGauge(metricsJSON.ID)
+		gValue, err := s.repo.GetGauge(metricsJSON.ID)
 		data = models.Metrics{
 			ID:    metricsJSON.ID,
 			MType: metricsJSON.MType,
 			Value: &gValue,
 		}
+		er = err
 	case "counter":
-		cValue, _ := s.repo.GetCounter(metricsJSON.ID)
+		cValue, err := s.repo.GetCounter(metricsJSON.ID)
 		data = models.Metrics{
 			ID:    metricsJSON.ID,
 			MType: metricsJSON.MType,
 			Delta: &cValue,
 		}
+		er = err
 	default:
 		http.Error(w, "Invalid metric type", http.StatusBadRequest)
+		return
+	}
+	if er != nil {
+		http.Error(w, "Value not exists", http.StatusNotFound)
 		return
 	}
 	dataJSON, err := json.Marshal(data)
@@ -223,4 +259,13 @@ func (s *Stor) HandleValueJSON(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(dataJSON)
+}
+
+func (s *Stor) HandleCheckStorage(w http.ResponseWriter, r *http.Request) {
+	err := s.repo.CheckStorage()
+	if err != nil {
+		http.Error(w, "Storage error", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
 }

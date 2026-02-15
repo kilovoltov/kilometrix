@@ -2,10 +2,25 @@ package repository
 
 import (
 	"testing"
+
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
+func NewLogger(level string) (*zap.Logger, error) {
+	logLevel, err := zapcore.ParseLevel(level)
+	if err != nil {
+		return nil, err
+	}
+
+	config := zap.NewDevelopmentConfig()
+	config.Level = zap.NewAtomicLevelAt(logLevel)
+	return config.Build()
+}
+
 func TestNewMemStorage(t *testing.T) {
-	storage := NewMemStorage()
+	logger, _ := NewLogger("info")
+	storage := NewMemStorage(logger)
 	
 	if storage == nil {
 		t.Fatal("NewMemStorage() returned nil")
@@ -29,7 +44,8 @@ func TestNewMemStorage(t *testing.T) {
 }
 
 func TestAddGauge(t *testing.T) {
-	storage := NewMemStorage()
+	logger, _ := NewLogger("info")
+	storage := NewMemStorage(logger)
 	
 	tests := []struct {
 		name  string
@@ -62,7 +78,8 @@ func TestAddGauge(t *testing.T) {
 }
 
 func TestAddGauge_Overwrite(t *testing.T) {
-	storage := NewMemStorage()
+	logger, _ := NewLogger("info")
+	storage := NewMemStorage(logger)
 	
 	// Добавляем метрику первый раз
 	err := storage.AddGauge("test", 10.0)
@@ -88,7 +105,8 @@ func TestAddGauge_Overwrite(t *testing.T) {
 }
 
 func TestAddCounter(t *testing.T) {
-	storage := NewMemStorage()
+	logger, _ := NewLogger("info")
+	storage := NewMemStorage(logger)
 	
 	tests := []struct {
 		name  string
@@ -121,7 +139,8 @@ func TestAddCounter(t *testing.T) {
 }
 
 func TestAddCounter_Accumulate(t *testing.T) {
-	storage := NewMemStorage()
+	logger, _ := NewLogger("info")
+	storage := NewMemStorage(logger)
 	
 	// Добавляем значение первый раз
 	err := storage.AddCounter("test", 10)
@@ -147,7 +166,8 @@ func TestAddCounter_Accumulate(t *testing.T) {
 }
 
 func TestAddCounter_MultipleAdditions(t *testing.T) {
-	storage := NewMemStorage()
+	logger, _ := NewLogger("info")
+	storage := NewMemStorage(logger)
 	
 	values := []int64{10, 20, 30, -5, 15}
 	expected := int64(70)
@@ -170,7 +190,8 @@ func TestAddCounter_MultipleAdditions(t *testing.T) {
 }
 
 func TestGetGauge_NotFound(t *testing.T) {
-	storage := NewMemStorage()
+	logger, _ := NewLogger("info")
+	storage := NewMemStorage(logger)
 	
 	_, err := storage.GetGauge("nonexistent")
 	if err == nil {
@@ -183,7 +204,8 @@ func TestGetGauge_NotFound(t *testing.T) {
 }
 
 func TestGetCounter_NotFound(t *testing.T) {
-	storage := NewMemStorage()
+	logger, _ := NewLogger("info")
+	storage := NewMemStorage(logger)
 	
 	_, err := storage.GetCounter("nonexistent")
 	if err == nil {
@@ -196,7 +218,8 @@ func TestGetCounter_NotFound(t *testing.T) {
 }
 
 func TestGetGaugesNames(t *testing.T) {
-	storage := NewMemStorage()
+	logger, _ := NewLogger("info")
+	storage := NewMemStorage(logger)
 	
 	// Проверяем пустой список
 	names := storage.GetGaugesNames()
@@ -237,7 +260,8 @@ func TestGetGaugesNames(t *testing.T) {
 }
 
 func TestGetCounterNames(t *testing.T) {
-	storage := NewMemStorage()
+	logger, _ := NewLogger("info")
+	storage := NewMemStorage(logger)
 	
 	// Проверяем пустой список
 	names := storage.GetCounterNames()
@@ -278,7 +302,8 @@ func TestGetCounterNames(t *testing.T) {
 }
 
 func TestMixedMetrics(t *testing.T) {
-	storage := NewMemStorage()
+	logger, _ := NewLogger("info")
+	storage := NewMemStorage(logger)
 	
 	// Добавляем смешанные метрики
 	storage.AddGauge("gauge1", 10.5)
@@ -317,7 +342,8 @@ func TestMixedMetrics(t *testing.T) {
 }
 
 func TestEdgeCases(t *testing.T) {
-	storage := NewMemStorage()
+	logger, _ := NewLogger("info")
+	storage := NewMemStorage(logger)
 	
 	// Тест с очень большими числами
 	err := storage.AddGauge("large_gauge", 1.7976931348623157e+308)

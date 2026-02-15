@@ -65,12 +65,19 @@ func main() {
             collector.CollectRuntimeMetrics(metrics)
 
         // Отправка метрик
+		
         case <-tickerReport.C:
-            for _, metric := range metrics {
-                if err := sender.SendMetricJSON(addr, client, *metric); err != nil {
-                    fmt.Printf("Error sending metric %s: %v\n", metric.Name, err)
+			if err := sender.SendMetricsJSON(addr, client, metrics); err != nil {
+				//TODO: rework
+				    fmt.Printf("Error sending metric %v: %v\n", metrics, err)
                 }
-            }
+            //         fmt.Printf("Error sending metric %s: %v\n", metric.Name, err)
+            //     }
+            // for _, metric := range metrics {
+            //     if err := sender.SendMetricJSON(addr, client, *metric); err != nil {
+            //         fmt.Printf("Error sending metric %s: %v\n", metric.Name, err)
+            //     }
+            // }
             counter = 0
         }
     }

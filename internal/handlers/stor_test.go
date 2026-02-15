@@ -32,6 +32,18 @@ func NewMockStorage() *MockStorage {
 	}
 }
 
+func (m *MockStorage) CheckStorage() error {
+	return nil
+}
+
+func (m *MockStorage) InitStorage() error {
+	return nil
+}
+
+func (m *MockStorage) CloseStorage() error {
+	return nil
+}
+
 func (m *MockStorage) AddGauge(name string, value float64) error {
 	m.gauges[name] = value
 	return nil
@@ -76,6 +88,10 @@ func (m *MockStorage) GetCounterNames() []string {
         i++
     }
     return cKeys
+}
+
+func (m *MockStorage) AddMetrics([]models.Metrics) error {
+	return nil
 }
 
 func (m *MockStorage) Snapshot() []models.Metrics {

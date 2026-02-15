@@ -7,7 +7,7 @@ import (
 	"github.com/kilovoltov/kilometrix/internal/models"
 )
 
-// Функция сбора метрик из runtime.MemStats
+// CollectRuntimeMetrics Функция сбора метрик из runtime.MemStats
 func CollectRuntimeMetrics(stor models.Storage) {
     var memStats runtime.MemStats
     runtime.ReadMemStats(&memStats)

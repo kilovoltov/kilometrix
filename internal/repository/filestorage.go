@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/kilovoltov/kilometrix/internal/models"
+	"go.uber.org/zap"
 )
 
 type FileStorage struct {
@@ -14,14 +15,16 @@ type FileStorage struct {
 
 	filepath string
 	interval time.Duration
+	restore  bool
 	done     chan struct{}
 }
 
-func NewFileStorage(filepath string, interval time.Duration) *FileStorage {
+func NewFileStorage(filepath string, interval time.Duration, r bool, logger *zap.Logger) *FileStorage {
 	fs := &FileStorage{
-		mem:      NewMemStorage(),
+		mem:      NewMemStorage(logger),
 		filepath: filepath,
 		interval: interval,
+		restore:  r,
 		done:     make(chan struct{}),
 	}
 
@@ -30,6 +33,20 @@ func NewFileStorage(filepath string, interval time.Duration) *FileStorage {
 	}
 
 	return fs
+}
+
+func (f *FileStorage) InitStorage() error {
+	if f.restore {
+		err := f.LoadFromFile()
+		return err
+	}
+	fmt.Println("Srarted with filestorage")
+	return nil
+}
+
+func (f *FileStorage) CloseStorage() error {
+	err := f.SaveToFile()
+	return err
 }
 
 func (f *FileStorage) runPeriodicSaver() {
@@ -41,7 +58,7 @@ func (f *FileStorage) runPeriodicSaver() {
 		case <-f.done:
 			return
 		case <-ticker.C:
-			err := f.saveToFile()
+			err := f.SaveToFile()
 			if err != nil {
 				fmt.Println(err)
 			}
@@ -50,11 +67,11 @@ func (f *FileStorage) runPeriodicSaver() {
 }
 
 // Close закрывает канал done, что приводит к завершению горутины
-func (f *FileStorage) Close() {
-	close(f.done)
-}
+// func (f *FileStorage) Close() {
+// 	close(f.done)
+// }
 
-func (f *FileStorage) saveToFile() error {
+func (f *FileStorage) SaveToFile() error {
 	// Делаем снимок данных
 	snapshot := f.Snapshot()
 
@@ -100,7 +117,7 @@ func (f *FileStorage) saveToFile() error {
 		return err
 	}
 
-	fileExistsAndNotEmpty(f.filepath)
+	// fileExistsAndNotEmpty(f.filepath)
 
 	// Запись в формате JSONL
 	// encoder := json.NewEncoder(file)
@@ -120,7 +137,7 @@ func (f *FileStorage) AddGauge(name string, value float64) error {
 
 	// Синхронная запись, если interval == 0
 	if f.interval == 0 {
-		return f.saveToFile()
+		return f.SaveToFile()
 	}
 	return nil
 }
@@ -131,7 +148,19 @@ func (f *FileStorage) AddCounter(name string, value int64) error {
 	}
 
 	if f.interval == 0 {
-		return f.saveToFile()
+		return f.SaveToFile()
+	}
+	return nil
+}
+
+func (f *FileStorage) AddMetrics(metrics []models.Metrics) error {
+	for _, v := range metrics {
+		switch v.MType {
+		case "gauge":
+			f.AddGauge(v.ID, *v.Value)
+		case "counter":
+			f.AddCounter(v.ID, *v.Delta)
+		}
 	}
 	return nil
 }
@@ -187,17 +216,25 @@ func (f *FileStorage) LoadFromFile() error {
 	return nil
 }
 
-func fileExistsAndNotEmpty(filename string) {
-	info, err := os.Stat(filename)
-	if os.IsNotExist(err) {
-		fmt.Printf("=============: File doesn't exist: %v", err) // файл не существует
-	}
+func (f *FileStorage) CheckStorage() error {
+	_, err := os.Stat(f.filepath)
 	if err != nil {
-		fmt.Printf("=============: Other ERROR: %v", err) // другая ошибка (например, нет прав)
+		fmt.Printf("ERROR: %v", err)
 	}
-
-	// Проверяем, что файл не пустой
-	if info.Size() > 0 {
-		fmt.Printf("=============: File exists and not empty\n")
-	}
+	return err
 }
+
+// func fileExistsAndNotEmpty(filename string) {
+// 	info, err := os.Stat(filename)
+// 	if os.IsNotExist(err) {
+// 		fmt.Printf("=============: File doesn't exist: %v", err) // файл не существует
+// 	}
+// 	if err != nil {
+// 		fmt.Printf("=============: Other ERROR: %v", err) // другая ошибка (например, нет прав)
+// 	}
+
+// 	// Проверяем, что файл не пустой
+// 	if info.Size() > 0 {
+// 		fmt.Printf("=============: File exists and not empty\n")
+// 	}
+// }
