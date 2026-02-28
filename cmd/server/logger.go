@@ -26,19 +26,17 @@ func ErrorLoggerMiddleware(logger *zap.Logger) func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now()
 			ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
-			
+
 			defer func() {
 				status := ww.Status()
 				// Пропускаем успешные запросы и 404 для статики (опционально)
 				if status < 400 {
 					return
 				}
-				
+
 				// Определяем уровень логирования
 				logLevel := zapcore.ErrorLevel
-				if status >= 500 {
-					logLevel = zapcore.ErrorLevel
-				} else if status >= 400 {
+				if status >= 400 {
 					logLevel = zapcore.WarnLevel
 				}
 
@@ -52,12 +50,11 @@ func ErrorLoggerMiddleware(logger *zap.Logger) func(http.Handler) http.Handler {
 					zap.String("referer", r.Referer()),
 				)
 			}()
-			
+
 			next.ServeHTTP(ww, r)
 		})
 	}
 }
-
 
 // RequestLoggerMiddleware — middleware-логер для входящих HTTP-запросов
 func RequestLoggerMiddleware(logger *zap.Logger) func(http.Handler) http.Handler {

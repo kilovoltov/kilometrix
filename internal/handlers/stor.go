@@ -157,7 +157,7 @@ func (s *Stor) HandleMain(w http.ResponseWriter, r *http.Request) {
 func (s *Stor) HandleMetricUpdateJSON(w http.ResponseWriter, r *http.Request) {
 	var metricsJSON models.Metrics
 	var buf bytes.Buffer
-	
+
 	if _, err := buf.ReadFrom(r.Body); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -202,7 +202,7 @@ func (s *Stor) HandleMetricsUpdateJSON(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := s.repo.AddMetrics(metricsJSON); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)  // Странная ошибка
+		http.Error(w, err.Error(), http.StatusInternalServerError) // Странная ошибка
 		return
 	}
 
