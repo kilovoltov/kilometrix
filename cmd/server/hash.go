@@ -17,6 +17,9 @@ func CheckHash(logger *zap.Logger, key string) func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 			signature := r.Header.Get("HashSHA256")
+			if signature == "" || key == "" {
+				return
+			}
 
 			body, _ := io.ReadAll(r.Body)
 			r.Body = io.NopCloser(bytes.NewBuffer(body))
