@@ -36,12 +36,15 @@ func ErrorLoggerMiddleware(logger *zap.Logger) func(http.Handler) http.Handler {
 
 				// Определяем уровень логирования
 				logLevel := zapcore.ErrorLevel
-				if status >= 400 {
-					logLevel = zapcore.WarnLevel
+				errorMessage := ""
+				if status >= 500 {
+					errorMessage = "Server Error:"
+				} else if status >= 400 {
+					errorMessage = "Request Error"
 				}
 
 				// Логируем ошибку
-				logger.Check(logLevel, "http error").Write(
+				logger.Check(logLevel, errorMessage).Write(
 					zap.String("method", r.Method),
 					zap.String("uri", r.RequestURI), // r.URL.Path
 					zap.Int("status", status),
@@ -69,7 +72,7 @@ func RequestLoggerMiddleware(logger *zap.Logger) func(http.Handler) http.Handler
 				if status >= 400 {
 					return
 				}
-				logger.Info("http request",
+				logger.Info("HTTP Request",
 					zap.String("method", r.Method),
 					zap.String("uri", r.RequestURI),
 					zap.Int("status", ww.Status()),
