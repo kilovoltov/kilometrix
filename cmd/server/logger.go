@@ -64,6 +64,11 @@ func RequestLoggerMiddleware(logger *zap.Logger) func(http.Handler) http.Handler
 			ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
 
 			defer func() {
+				status := ww.Status()
+				// Пропускаем ошибки
+				if status >= 400 {
+					return
+				}
 				logger.Info("http request",
 					zap.String("method", r.Method),
 					zap.String("uri", r.RequestURI),

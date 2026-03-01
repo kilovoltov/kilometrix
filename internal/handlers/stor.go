@@ -167,6 +167,11 @@ func (s *Stor) HandleMetricUpdateJSON(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	// Ошибка, если не передан ID
+	if metricsJSON.ID == "" {
+		http.Error(w, "wrong metring id", http.StatusNotFound)
+		return
+	}
 	// Преобразуем значение в нужный формат
 	var err error
 	switch metricsJSON.MType {
