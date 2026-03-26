@@ -1,3 +1,4 @@
+// Package collector collects metrics from gopsutil and runtime
 package collector
 
 import (
