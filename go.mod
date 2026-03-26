@@ -1,6 +1,6 @@
 module github.com/kilovoltov/kilometrix
 
-go 1.24.9
+go 1.25.7
 
 require (
 	github.com/caarlos0/env/v6 v6.10.1
