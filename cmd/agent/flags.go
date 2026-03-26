@@ -11,12 +11,16 @@ var (
 	addr           string
 	pollInterval   int64
 	reportInterval int
+	secretKey      string
+	rateLimit      int
 )
 
 type Config struct {
 	Address        string `env:"ADDRESS"`
 	PollInterval   int64  `env:"POLL_INTERVAL"`
 	ReportInterval int    `env:"REPORT_INTERVAL"`
+	SecretKey      string `env:"KEY"`
+	RateLimit      int    `env:"RATE_LIMIT"`
 }
 
 // параметры запуска: адрес сервера, интервалы сбора и отправки метрик
@@ -24,6 +28,8 @@ func parseFlags() {
 	flag.StringVar(&addr, "a", "localhost:8080", "address of the server")
 	flag.Int64Var(&pollInterval, "p", 2, "poll interval, sec")
 	flag.IntVar(&reportInterval, "r", 10, "report interval, sec")
+	flag.StringVar(&secretKey, "k", "secretstring", "secretkey for hash")
+	flag.IntVar(&rateLimit, "l", 5, "worker pool, num")
 	flag.Parse()
 
 	var cfg Config
@@ -41,5 +47,11 @@ func parseFlags() {
 	}
 	if cfg.ReportInterval != 0 {
 		reportInterval = cfg.ReportInterval
+	}
+	if cfg.SecretKey != "" {
+		secretKey = cfg.SecretKey
+	}
+	if cfg.RateLimit != 0 {
+		rateLimit = cfg.RateLimit
 	}
 }

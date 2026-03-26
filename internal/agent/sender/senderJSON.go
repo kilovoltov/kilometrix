@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"errors"
 
 	"github.com/kilovoltov/kilometrix/internal/models"
 
@@ -11,7 +12,7 @@ import (
 )
 
 // SendMetricsJSON отправляет несколько метрик за один раз
-func SendMetricsJSON(serverAddress string, client *resty.Client, metrics models.Storage) error {
+func SendMetricsJSON(serverAddress string, client *resty.Client, metrics models.Storage, key string) error {
 	url := fmt.Sprintf("http://%s/updates/",
 		serverAddress,
 	)
@@ -42,6 +43,9 @@ func SendMetricsJSON(serverAddress string, client *resty.Client, metrics models.
 		return err
 	}
 
+	// Генерируем хэш для jsonData
+	hash := HashCount(jsonData, key)
+
 	// Сжимаем JSON с помощью gzip
 	compressedData, err := GzipCompress(jsonData)
 	if err != nil {
@@ -52,14 +56,17 @@ func SendMetricsJSON(serverAddress string, client *resty.Client, metrics models.
 	resp, err := client.R().
 		SetHeader("Content-Encoding", "gzip").
 		SetHeader("Content-Type", "application/json").
+		SetHeader("HashSHA256", hash).
 		SetBody(compressedData).
 		Post(url)
 
 	if err != nil {
-		return fmt.Errorf("failed to send metrics %v: %w", data, err)
+		fmt.Println("failed to send metrics")
+		return err
 	}
 	if resp.StatusCode() != 200 {
-		return fmt.Errorf("non-200 status for metrics %v: %s", data, resp.Status())
+		fmt.Println("non-200 status for metrics")
+		return errors.New(resp.Status())
 	}
 
 	return nil

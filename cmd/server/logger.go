@@ -26,24 +26,25 @@ func ErrorLoggerMiddleware(logger *zap.Logger) func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now()
 			ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
-			
+
 			defer func() {
 				status := ww.Status()
 				// Пропускаем успешные запросы и 404 для статики (опционально)
 				if status < 400 {
 					return
 				}
-				
+
 				// Определяем уровень логирования
 				logLevel := zapcore.ErrorLevel
+				errorMessage := ""
 				if status >= 500 {
-					logLevel = zapcore.ErrorLevel
+					errorMessage = "Server Error:"
 				} else if status >= 400 {
-					logLevel = zapcore.WarnLevel
+					errorMessage = "Request Error"
 				}
 
 				// Логируем ошибку
-				logger.Check(logLevel, "http error").Write(
+				logger.Check(logLevel, errorMessage).Write(
 					zap.String("method", r.Method),
 					zap.String("uri", r.RequestURI), // r.URL.Path
 					zap.Int("status", status),
@@ -52,12 +53,11 @@ func ErrorLoggerMiddleware(logger *zap.Logger) func(http.Handler) http.Handler {
 					zap.String("referer", r.Referer()),
 				)
 			}()
-			
+
 			next.ServeHTTP(ww, r)
 		})
 	}
 }
-
 
 // RequestLoggerMiddleware — middleware-логер для входящих HTTP-запросов
 func RequestLoggerMiddleware(logger *zap.Logger) func(http.Handler) http.Handler {
@@ -67,7 +67,12 @@ func RequestLoggerMiddleware(logger *zap.Logger) func(http.Handler) http.Handler
 			ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
 
 			defer func() {
-				logger.Info("http request",
+				status := ww.Status()
+				// Пропускаем ошибки
+				if status >= 400 {
+					return
+				}
+				logger.Info("HTTP Request",
 					zap.String("method", r.Method),
 					zap.String("uri", r.RequestURI),
 					zap.Int("status", ww.Status()),

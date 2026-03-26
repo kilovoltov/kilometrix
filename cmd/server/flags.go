@@ -14,15 +14,17 @@ var (
 	dsn          string
 	storInterval int
 	restore      bool
+	secretKey    string
 )
 
 func parseFlags() {
 	flag.StringVar(&addr, "a", "localhost:8080", "address of the server")
 	flag.StringVar(&logLevel, "l", "info", "log level")
 	flag.IntVar(&storInterval, "i", 15, "stor interval, sec")
-	flag.StringVar(&storFilePath, "f", "", "filestorage path")  // ./metrics.json
+	flag.StringVar(&storFilePath, "f", "", "filestorage path") // ./metrics.json
 	flag.StringVar(&dsn, "d", "", "database connection string")
 	flag.BoolVar(&restore, "r", false, "restore from file")
+	flag.StringVar(&secretKey, "k", "secretstring", "secretkey for hash")
 	flag.Parse()
 
 	if envDSN := os.Getenv("DATABASE_DSN"); envDSN != "" {
@@ -46,5 +48,8 @@ func parseFlags() {
 	}
 	if _, ok := os.LookupEnv("RESTORE"); ok {
 		restore = true
+	}
+	if envSecretKey := os.Getenv("KEY"); envSecretKey != "" {
+		secretKey = envSecretKey
 	}
 }
