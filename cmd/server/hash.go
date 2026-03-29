@@ -41,6 +41,7 @@ func CheckHash(logger *zap.Logger, key string) func(http.Handler) http.Handler {
 					zap.Error(err),
 				)
 				http.Error(w, "Invalid signature", http.StatusBadRequest)
+				return
 			}
 			next.ServeHTTP(w, r)
 		})
